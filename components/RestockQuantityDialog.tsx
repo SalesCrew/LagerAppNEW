@@ -39,7 +39,7 @@ export default function RestockQuantityDialog({
 }: RestockQuantityDialogProps) {
   const { currentUser } = useUser();
   const { toast } = useToast();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [sizes, setSizes] = useState<any[]>([]);
@@ -88,7 +88,8 @@ export default function RestockQuantityDialog({
       return;
     }
     
-    if (!item || !selectedSizeId || quantity <= 0) {
+    const qtyNum = Number.parseInt(quantity || '');
+    if (!item || !selectedSizeId || Number.isNaN(qtyNum) || qtyNum <= 0) {
       console.log('RestockQuantityDialog - Validation failed');
       toast({
         title: "Error",
@@ -105,7 +106,7 @@ export default function RestockQuantityDialog({
       await recordRestock({
         itemId: item.id,
         itemSizeId: selectedSizeId,
-        quantity: quantity,
+        quantity: qtyNum,
         employeeId: currentUser.id,
         notes: notes
       });
@@ -147,51 +148,54 @@ export default function RestockQuantityDialog({
         <DialogHeader>
           <DialogTitle>Lagerbestand auffüllen für {item.name}</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="size" className="text-right">
-              Größe
-            </Label>
-            <Select 
-              value={selectedSizeId} 
-              onValueChange={setSelectedSizeId}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Größe auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {sizes.map((size) => (
-                  <SelectItem key={size.id} value={size.id}>
-                    {size.size} (Verfügbar: {size.available_quantity})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="quantity" className="text-right">
-              Menge
-            </Label>
-            <Input
-              id="quantity"
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              min={1}
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="notes" className="text-right">
-              Notizen
-            </Label>
-            <Input
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional: Zusätzliche Informationen"
-              className="col-span-3"
-            />
+        <div className="mx-auto w-full max-w-xl">
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="size">
+                Größe
+              </Label>
+              <Select 
+                value={selectedSizeId} 
+                onValueChange={setSelectedSizeId}
+              >
+                <SelectTrigger className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
+                  <SelectValue placeholder="Größe auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sizes.map((size) => (
+                    <SelectItem key={size.id} value={size.id}>
+                      {size.size} (Verfügbar: {size.available_quantity})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">
+                Menge
+              </Label>
+              <Input
+                id="quantity"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">
+                Notizen
+              </Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional: Zusätzliche Informationen"
+                className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -201,7 +205,10 @@ export default function RestockQuantityDialog({
               console.log('RestockQuantityDialog - Confirm button clicked');
               handleConfirmRestock();
             }} 
-            disabled={isSubmitting || quantity <= 0 || !selectedSizeId}
+            disabled={(() => {
+              const q = Number.parseInt(quantity || '');
+              return isSubmitting || Number.isNaN(q) || q <= 0 || !selectedSizeId;
+            })()}
           >
             {isSubmitting ? 'Wird gespeichert...' : 'Bestätigen'}
           </Button>

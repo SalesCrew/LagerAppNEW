@@ -100,12 +100,12 @@ export default function SearchBar() {
     <>
       <div ref={searchRef} className="relative w-full max-w-md">
         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
           <Input
             ref={inputRef}
             type="text"
             placeholder="Suche nach Marken, Artikeln, Promotoren..."
-            className="w-full pl-9 pr-9"
+            className="w-full pl-10 pr-9 h-9 rounded-md focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             value={query}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
@@ -114,7 +114,7 @@ export default function SearchBar() {
             <Button
               variant="ghost"
               size="sm"
-              className="absolute right-0 top-0 h-full px-3 py-2"
+              className="absolute right-0 top-0 h-full px-3 py-2 focus:outline-none focus-visible:outline-none"
               onClick={handleClearSearch}
             >
               <X className="h-4 w-4" />

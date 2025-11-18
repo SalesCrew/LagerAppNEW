@@ -25,7 +25,7 @@ export default function TakeOutDialog({
 }: TakeOutDialogProps) {
   const { currentUser } = useUser();
   const { toast } = useToast();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<string>('');
   const [promoterId, setPromoterId] = useState("");
   const [sizeId, setSizeId] = useState("");
   const [sizes, setSizes] = useState<any[]>([]);
@@ -81,6 +81,7 @@ export default function TakeOutDialog({
   };
 
   const handleConfirmTakeOut = async () => {
+    const qtyNum = Number.parseInt(quantity || '');
     if (!currentUser?.id) {
       toast({
         title: "Error",
@@ -90,7 +91,7 @@ export default function TakeOutDialog({
       return;
     }
     
-    if (!item || !sizeId || !promoterId || quantity <= 0) {
+    if (!item || !sizeId || !promoterId || Number.isNaN(qtyNum) || qtyNum <= 0) {
       console.log('Validation failed:', { item, sizeId, promoterId, quantity });
       toast({
         title: "Error",
@@ -106,7 +107,7 @@ export default function TakeOutDialog({
       console.log('TakeOutDialog - Before API call:', {
         itemId: item.id,
         itemSizeId: sizeId,
-        quantity: quantity,
+        quantity: qtyNum,
         promoterId: promoterId
       });
       
@@ -125,7 +126,7 @@ export default function TakeOutDialog({
       await recordTakeOut({
         itemId: item.id,
         itemSizeId: sizeId,
-        quantity: quantity,
+        quantity: qtyNum,
         promoterId: promoterId,
         employeeId: currentUser.id,
         notes: notes
@@ -177,55 +178,58 @@ export default function TakeOutDialog({
 
   return (
     <Dialog open={!!item} onOpenChange={() => setTakingOutItem(null)}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle>Artikel ausgeben</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="takeOutItem" className="text-right">Artikel</Label>
-            <div className="col-span-3">
-              <p>{item.name || item.product_id}</p>
+        <div className="mx-auto w-full">
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="takeOutItem">Artikel</Label>
+              <Input
+                id="takeOutItem"
+                value={item.name || item.product_id}
+                readOnly
+                className="w-full h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="takeOutSize" className="text-right">Größe</Label>
-            <Select value={sizeId} onValueChange={setSizeId}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Größe auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {sizes.map((size) => (
-                  <SelectItem key={size.id} value={size.id}>
-                    {size.size} (Verfügbar: {size.available_quantity})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="takeOutQuantity" className="text-right">Menge</Label>
-            <Input
-              id="takeOutQuantity"
-              type="number"
-              min="1"
-              max={availableQuantity}
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-              className="col-span-3"
-            />
-            {selectedSize && (
-              <div className="col-span-4 text-right text-sm text-muted-foreground">
-                Verfügbar: {availableQuantity}
-              </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="takeOutPromoter" className="text-right">Promoter</Label>
-            <div className="col-span-3">
+
+            <div className="space-y-2">
+              <Label htmlFor="takeOutSize">Größe</Label>
+              <Select value={sizeId} onValueChange={setSizeId}>
+                <SelectTrigger className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
+                  <SelectValue placeholder="Größe auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sizes.map((size) => (
+                    <SelectItem key={size.id} value={size.id}>
+                      {size.size} (Verfügbar: {size.available_quantity})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="takeOutQuantity">Menge</Label>
+              <Input
+                id="takeOutQuantity"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
+              {selectedSize && (
+                <div className="text-right text-sm text-muted-foreground">
+                  Verfügbar: {availableQuantity}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="takeOutPromoter">Promoter</Label>
               <PromoterSelector 
                 value={promoterId}
                 onChange={handlePromoterChange}
@@ -233,24 +237,27 @@ export default function TakeOutDialog({
                 includeInactive={false}
               />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="takeOutNotes" className="text-right">Notizen</Label>
-            <Input
-              id="takeOutNotes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional: Zusätzliche Informationen"
-              className="col-span-3"
-            />
+
+            <div className="space-y-2">
+              <Label htmlFor="takeOutNotes">Notizen</Label>
+              <Input
+                id="takeOutNotes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional: Zusätzliche Informationen"
+                className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setTakingOutItem(null)}>Abbrechen</Button>
           <Button 
             onClick={handleConfirmTakeOut} 
-            disabled={isSubmitting || !sizeId || !promoterId || quantity <= 0 || quantity > availableQuantity}
+            disabled={(() => {
+              const q = Number.parseInt(quantity || '');
+              return isSubmitting || !sizeId || !promoterId || Number.isNaN(q) || q <= 0 || (selectedSize ? q > availableQuantity : false);
+            })()}
           >
             {isSubmitting ? 'Wird gespeichert...' : 'Bestätigen'}
           </Button>

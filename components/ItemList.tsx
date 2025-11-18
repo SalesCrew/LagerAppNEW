@@ -16,6 +16,7 @@ import { useUser } from '../contexts/UserContext'
 import { usePinned } from '../hooks/usePinned'
 import { useItems, ItemWithSizeCount } from '@/hooks/useItems'
 import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import { fetchAllItemSizesForBrand, fetchItemSizes, ItemSize } from '@/lib/api/items'
 import { useTransactions } from '@/hooks/useTransactions'
 import { Promoter } from '@/lib/api/promoters'
@@ -33,6 +34,7 @@ interface ItemListProps {
   promoterItems: any[];
   setPromoterItems: (items: any[]) => void;
   triggerRefresh: () => void;
+  isMassEditMode?: boolean; // controlled from parent (BrandView)
 }
 
 export default function ItemList({ 
@@ -43,7 +45,8 @@ export default function ItemList({
   setPromoters, 
   promoterItems, 
   setPromoterItems,
-  triggerRefresh
+  triggerRefresh,
+  isMassEditMode: externalMassEdit
 }: ItemListProps) {
   const { currentUser } = useUser();
   const { toast } = useToast();
@@ -126,18 +129,13 @@ export default function ItemList({
   }, [brandId, items.length, loadSizes]);
 
   // Replace the problematic useEffect with a function that's called only when the toggle button is clicked
-  const toggleMassEditMode = useCallback(() => {
-    const newMode = !isMassEditMode;
-    
+  const applyMassEditToggleEffects = (newMode: boolean) => {
     if (!newMode) {
-      // Reset state when turning off mass edit mode
       setSelectedPromoter(null);
       setSelectedAction(null);
       setItemQuantities({});
     } else if (items.length > 0 && Object.keys(itemSizes).length > 0) {
-      // Initialize state when turning on mass edit mode
       const newItemQuantities: {[key: string]: { sizeId: string; quantity: number }} = {};
-      
       items.forEach(item => {
         const sizes = itemSizes[item.id] || [];
         if (sizes.length === 1) {
@@ -147,15 +145,25 @@ export default function ItemList({
           };
         }
       });
-      
       if (Object.keys(newItemQuantities).length > 0) {
         setItemQuantities(newItemQuantities);
       }
     }
-    
-    // Set the mode last
+  };
+
+  const toggleMassEditMode = useCallback(() => {
+    const newMode = !isMassEditMode;
+    applyMassEditToggleEffects(newMode);
     setIsMassEditMode(newMode);
   }, [isMassEditMode, items, itemSizes]);
+
+  // Sync with parent-controlled state if provided
+  useEffect(() => {
+    if (typeof externalMassEdit === 'boolean' && externalMassEdit !== isMassEditMode) {
+      applyMassEditToggleEffects(externalMassEdit);
+      setIsMassEditMode(externalMassEdit);
+    }
+  }, [externalMassEdit]);
 
   const handleEdit = (item: ItemWithSizeCount) => {
     setEditingItem(item)
@@ -489,56 +497,84 @@ export default function ItemList({
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant={isMassEditMode ? "default" : "outline"}
-            onClick={toggleMassEditMode}
-          >
-            <ListChecks className="mr-2 h-4 w-4" />
-            Massenbearbeitung
-          </Button>
-        </div>
-        {isMassEditMode && (
-          <div className="flex items-center gap-2">
-            <Select value={selectedAction || ""} onValueChange={(value: any) => setSelectedAction(value)}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Aktion wählen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="take-out" className="text-red-500">Take Out</SelectItem>
-                <SelectItem value="return" className="text-green-500">Return</SelectItem>
-                <SelectItem value="burn">Burn</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="w-[200px]">
-              <PromoterSelector
-                value={selectedPromoter?.id || ''}
-                onChange={(promoter) => {
-                  console.log("[ItemList] PromoterSelector onChange received promoter:", promoter);
-                  setSelectedPromoter(promoter);
-                  console.log("[ItemList] setSelectedPromoter called."); 
-                }}
-                placeholder="Promoter wählen"
-                includeInactive={selectedAction === 'return'}
-              />
-            </div>
-            <Button
-              onClick={handleMassEditConfirm}
-              disabled={isSubmitting || !selectedAction || !selectedPromoter || Object.values(itemQuantities).every(q => q.quantity <= 0)}
-              className={`
-                ${selectedAction === 'take-out' ? 'border-2 border-red-500 bg-transparent hover:bg-transparent hover:border-red-600 text-red-500 hover:text-red-600' : ''}
-                ${selectedAction === 'return' ? 'border-2 border-green-500 bg-transparent hover:bg-transparent hover:border-green-600 text-green-500 hover:text-green-600' : ''}
-                ${!selectedAction ? '' : ''}
-              `}
+      <div
+        className={`overflow-hidden transition-all duration-300 ${isMassEditMode ? 'max-h-40 opacity-100 mt-2 mb-2' : 'max-h-0 opacity-0 mt-0 mb-3'}`}
+      >
+        {/* Wrapper aligns the divider and controls width to the buttons only */}
+        <div className="ml-auto w-fit">
+          {/* Horizontal divider: fade-in from left only (0% -> transparent, 100% -> opaque) */}
+          <div className="h-px bg-gradient-to-r from-transparent via-foreground/25 to-foreground/25 mb-2" />
+          <div className="flex items-center gap-2 justify-end">
+          <Select value={selectedAction || ""} onValueChange={(value: any) => setSelectedAction(value)}>
+            <SelectTrigger
+              className={cn(
+                "w-[150px] h-9 rounded-md border focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none",
+                selectedAction === "take-out" && "bg-gradient-to-br from-red-50/60 to-red-100/60 text-red-500 border-red-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+                selectedAction === "return" && "bg-gradient-to-br from-green-50/60 to-green-100/60 text-green-600 border-green-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+                selectedAction === "burn" && "bg-gradient-to-br from-amber-50/60 to-amber-100/60 text-amber-600 border-amber-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
+              )}
             >
-              {isSubmitting ? 'Wird verarbeitet...' : 'Bestätigen'}
-            </Button>
+              <SelectValue placeholder="Aktion wählen" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem
+                value="take-out"
+                className="text-red-500 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-500"
+              >
+                Take Out
+              </SelectItem>
+              <SelectItem
+                value="return"
+                className="text-green-500 data-[highlighted]:bg-green-50 data-[highlighted]:text-green-500"
+              >
+                Return
+              </SelectItem>
+              <SelectItem
+                value="burn"
+                className="text-amber-600 data-[highlighted]:bg-amber-50 data-[highlighted]:text-amber-600"
+              >
+                Burn
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="w-[200px]">
+            <PromoterSelector
+              value={selectedPromoter?.id || ''}
+              onChange={(promoter) => {
+                setSelectedPromoter(promoter);
+              }}
+              placeholder="Promoter wählen"
+              includeInactive={selectedAction === 'return'}
+            />
           </div>
-        )}
+          <Button
+            onClick={handleMassEditConfirm}
+            disabled={isSubmitting || !selectedAction || !selectedPromoter || Object.values(itemQuantities).every(q => q.quantity <= 0)}
+            className={cn(
+              "h-9 rounded-md inline-flex items-center gap-1 px-3 border transition-colors focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+              selectedAction === 'take-out'
+                ? "bg-gradient-to-br from-red-50/60 to-red-100/60 text-red-600 border-red-500 hover:from-red-100/60 hover:to-red-200/60"
+                : selectedAction === 'return'
+                  ? "bg-gradient-to-br from-green-50/60 to-green-100/60 text-green-600 border-green-500 hover:from-green-100/60 hover:to-green-200/60"
+                  : selectedAction === 'burn'
+                    ? "bg-gradient-to-br from-amber-50/60 to-amber-100/60 text-amber-600 border-amber-500 hover:from-amber-100/60 hover:to-amber-200/60"
+                    : "bg-white text-foreground border-neutral-300 hover:bg-neutral-50"
+            )}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Wird verarbeitet...
+              </>
+            ) : (
+              'Bestätigen'
+            )}
+          </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4 pb-4">
         {sortedItems.map((item) => (
           <Card key={item.id} className={`overflow-hidden ${!item.isActive ? 'opacity-60' : ''} transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-primary`}>
             <CardContent className="p-0">
@@ -619,22 +655,24 @@ export default function ItemList({
                     )}
                   </div>
                   
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <p className="text-gray-500">Original:</p>
-                      <p>{item.quantities?.originalQuantity || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Available:</p>
-                      <p>{item.quantities?.availableQuantity || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">In Circulation:</p>
-                      <p>{item.quantities?.inCirculation || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-500">Total:</p>
-                      <p>{item.quantities?.totalQuantity || 0}</p>
+                  <div className="mt-4 rounded-md border border-dotted border-neutral-300/60 bg-neutral-50/60 p-3">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <p className="text-gray-500">Original:</p>
+                        <p>{item.quantities?.originalQuantity || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Available:</p>
+                        <p>{item.quantities?.availableQuantity || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">In Circulation:</p>
+                        <p>{item.quantities?.inCirculation || 0}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Total:</p>
+                        <p>{item.quantities?.totalQuantity || 0}</p>
+                      </div>
                     </div>
                   </div>
                   
@@ -665,17 +703,13 @@ export default function ItemList({
                       )}
                       <div className="flex items-center gap-2">
                         <Input
-                          type="number"
-                          min="0"
-                          max={(() => {
-                            const size = itemSizes[item.id]?.find(s => s.id === itemQuantities[item.id]?.sizeId);
-                            if (!size) return 0;
-                            return selectedAction === 'take-out' ? size.available_quantity :
-                                   selectedAction === 'return' || selectedAction === 'burn' ? size.in_circulation : 0;
-                          })()}
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                           value={itemQuantities[item.id]?.quantity || ''}
                           onChange={(e) => handleMassEditQuantityChange(item.id, parseInt(e.target.value) || 0)}
                           placeholder="Menge"
+                          className="h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
                           disabled={!selectedAction || !selectedPromoter || !itemQuantities[item.id]?.sizeId ||
                                   (selectedAction === 'take-out' && 
                                    (itemSizes[item.id]?.find(s => s.id === itemQuantities[item.id]?.sizeId)?.available_quantity || 0) <= 0) ||

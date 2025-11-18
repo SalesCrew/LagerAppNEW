@@ -26,7 +26,7 @@ export default function BurnItemDialog({
 }: BurnItemDialogProps) {
   const { currentUser } = useUser();
   const { toast } = useToast();
-  const [burnQuantity, setBurnQuantity] = useState(1)
+  const [burnQuantity, setBurnQuantity] = useState<string>('')
   const [promoterId, setPromoterId] = useState("")
   const [sizeId, setSizeId] = useState("")
   const [sizes, setSizes] = useState<ItemSize[]>([])
@@ -65,6 +65,7 @@ export default function BurnItemDialog({
   };
 
   const handleConfirmBurn = async () => {
+    const qtyNum = Number.parseInt(burnQuantity || '');
     console.log('BurnItemDialog - handleConfirmBurn called');
     console.log('BurnItemDialog - item:', item);
     console.log('BurnItemDialog - sizeId:', sizeId);
@@ -82,7 +83,7 @@ export default function BurnItemDialog({
       return;
     }
     
-    if (!item || !sizeId || !promoterId || burnQuantity <= 0) {
+    if (!item || !sizeId || !promoterId || Number.isNaN(qtyNum) || qtyNum <= 0) {
       console.log('BurnItemDialog - Validation failed');
       toast({
         title: "Error",
@@ -99,7 +100,7 @@ export default function BurnItemDialog({
       await recordBurn({
         itemId: item.id,
         itemSizeId: sizeId,
-        quantity: burnQuantity,
+        quantity: qtyNum,
         promoterId: promoterId,
         employeeId: currentUser.id,
         notes: notes
@@ -142,51 +143,54 @@ export default function BurnItemDialog({
         <DialogHeader>
           <DialogTitle>Artikel als verloren/beschädigt markieren</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="burnItem" className="text-right">Artikel</Label>
-            <div className="col-span-3">
-              <p>{item.name || item.product_id}</p>
+        <div className="mx-auto w-full max-w-xl">
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="burnItem">Artikel</Label>
+              <Input
+                id="burnItem"
+                value={item.name || item.product_id}
+                readOnly
+                className="w-full h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="burnSize" className="text-right">Größe</Label>
-            <Select value={sizeId} onValueChange={setSizeId}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Größe auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                {sizes.map((size) => (
-                  <SelectItem key={size.id} value={size.id}>
-                    {size.size} (Im Umlauf: {size.in_circulation})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="burnQuantity" className="text-right">Menge</Label>
-            <Input
-              id="burnQuantity"
-              type="number"
-              min="1"
-              max={inCirculationQuantity}
-              value={burnQuantity}
-              onChange={(e) => setBurnQuantity(parseInt(e.target.value) || 0)}
-              className="col-span-3"
-            />
-            {selectedSize && (
-              <div className="col-span-4 text-right text-sm text-muted-foreground">
-                Im Umlauf: {inCirculationQuantity}
-              </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="burnPromoter" className="text-right">Promoter</Label>
-            <div className="col-span-3">
+
+            <div className="space-y-2">
+              <Label htmlFor="burnSize">Größe</Label>
+              <Select value={sizeId} onValueChange={setSizeId}>
+                <SelectTrigger className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
+                  <SelectValue placeholder="Größe auswählen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sizes.map((size) => (
+                    <SelectItem key={size.id} value={size.id}>
+                      {size.size} (Im Umlauf: {size.in_circulation})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="burnQuantity">Menge</Label>
+              <Input
+                id="burnQuantity"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={burnQuantity}
+                onChange={(e) => setBurnQuantity(e.target.value)}
+                className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
+              {selectedSize && (
+                <div className="text-right text-sm text-muted-foreground">
+                  Im Umlauf: {inCirculationQuantity}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="burnPromoter">Promoter</Label>
               <PromoterSelector 
                 value={promoterId} 
                 onChange={handlePromoterChange} 
@@ -194,17 +198,17 @@ export default function BurnItemDialog({
                 includeInactive={true}
               />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="burnNotes" className="text-right">Notizen</Label>
-            <Input
-              id="burnNotes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional: Grund für Verlust/Beschädigung"
-              className="col-span-3"
-            />
+
+            <div className="space-y-2">
+              <Label htmlFor="burnNotes">Notizen</Label>
+              <Input
+                id="burnNotes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Optional: Grund für Verlust/Beschädigung"
+                className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>
@@ -214,7 +218,10 @@ export default function BurnItemDialog({
               console.log('BurnItemDialog - Confirm button clicked');
               handleConfirmBurn();
             }} 
-            disabled={isSubmitting || !sizeId || !promoterId || burnQuantity <= 0 || burnQuantity > inCirculationQuantity}
+            disabled={(() => {
+              const q = Number.parseInt(burnQuantity || '');
+              return isSubmitting || !sizeId || !promoterId || Number.isNaN(q) || q <= 0 || (selectedSize ? q > inCirculationQuantity : false);
+            })()}
           >
             {isSubmitting ? 'Wird gespeichert...' : 'Bestätigen'}
           </Button>

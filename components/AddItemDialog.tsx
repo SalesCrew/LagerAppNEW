@@ -13,25 +13,16 @@ import { useItems } from '@/hooks/useItems'
 import { useToast } from '@/hooks/use-toast'
 import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '@/lib/supabase'
+import { Item } from '@/lib/api/items'
 
-interface Item {
-  id: string
+type SizeInput = { size: string; quantity: number | "" }
+type NewItemState = {
   name: string
-  product_id: string
-  sizes: Array<{ size: string; quantity: number }>
-  image_url: string | null
-  original_quantity: number
-  inCirculation?: number
-  total?: number
-  brand_id?: string
-  is_active?: boolean
-  is_shared?: boolean
+  productId: string
+  sizes: SizeInput[]
+  image: string
 }
-
-interface Brand {
-  name: string
-  itemCount: number
-}
+type ItemWithSizes = Item & { sizes?: Array<{ size: string; quantity: number }> }
 
 interface AddItemDialogProps {
   showDialog: boolean
@@ -43,16 +34,16 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
   const { addItem, items, refreshItems } = useItems(brandId);
   const { toast } = useToast();
   
-  const [newItem, setNewItem] = useState({ 
+  const [newItem, setNewItem] = useState<NewItemState>({ 
     name: "", 
     productId: "", 
-    sizes: [{ size: "Einheitsgröße", quantity: 0 }], 
+    sizes: [{ size: "Einheitsgröße", quantity: "" }], 
     image: "/placeholder.svg" 
   })
   const [multipleSizes, setMultipleSizes] = useState(false)
   const [sharedItemInput, setSharedItemInput] = useState("")
-  const [sharedItemResults, setSharedItemResults] = useState<Item[]>([])
-  const [selectedSharedItem, setSelectedSharedItem] = useState<Item | null>(null)
+  const [sharedItemResults, setSharedItemResults] = useState<ItemWithSizes[]>([])
+  const [selectedSharedItem, setSelectedSharedItem] = useState<ItemWithSizes | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
@@ -66,7 +57,7 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
       setNewItem({ 
         name: "", 
         productId: "", 
-        sizes: [{ size: "Einheitsgröße", quantity: 0 }], 
+        sizes: [{ size: "Einheitsgröße", quantity: "" }], 
         image: "/placeholder.svg" 
       })
       setMultipleSizes(false)
@@ -113,7 +104,7 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
       }
       
       // For each item, fetch its sizes
-      const itemsWithSizes = await Promise.all(data.map(async (item: Item) => {
+      const itemsWithSizes: ItemWithSizes[] = await Promise.all(data.map(async (item: Item) => {
         const { data: sizesData, error: sizesError } = await supabase
           .from('item_sizes')
           .select('size, original_quantity')
@@ -180,7 +171,10 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
       }
 
       // Validate quantity
-      const totalQuantity = newItem.sizes.reduce((sum, size) => sum + size.quantity, 0)
+      const totalQuantity = newItem.sizes.reduce((sum, size) => {
+        const q = typeof size.quantity === 'number' ? size.quantity : (parseInt(size.quantity as any) || 0);
+        return sum + q;
+      }, 0)
       if (totalQuantity <= 0) {
         toast({
           title: "Error",
@@ -225,7 +219,12 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
         totalQuantity,
         imageFile,
         false, // not shared
-        multipleSizes ? newItem.sizes : undefined // Pass sizes array if multiple sizes are enabled
+        multipleSizes 
+          ? newItem.sizes.map(s => ({
+              size: s.size,
+              quantity: typeof s.quantity === 'number' ? s.quantity : (parseInt(s.quantity as any) || 0)
+            }))
+          : undefined // Pass sizes array if multiple sizes are enabled
       )
       console.log('AddItemDialog - addItem completed successfully');
       
@@ -233,7 +232,7 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
       setNewItem({ 
         name: "", 
         productId: "", 
-        sizes: [{ size: "Einheitsgröße", quantity: 0 }], 
+        sizes: [{ size: "Einheitsgröße", quantity: "" }], 
         image: "/placeholder.svg" 
       })
       setImageFile(null)
@@ -261,7 +260,7 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
     }
   }
 
-  const handleSharedItemSelect = (item: Item) => {
+  const handleSharedItemSelect = (item: ItemWithSizes) => {
     setSelectedSharedItem(item);
     setSharedItemInput(item.name);
     setSharedItemResults([]);
@@ -286,31 +285,26 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
           <DialogTitle>Neuen Artikel hinzufügen</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="sharedItem" className="text-right">
-              Shared Item
-            </Label>
-            <div className="col-span-3 relative">
-              <div className="flex w-full items-center space-x-2">
-                <div className="relative flex-grow">
-                  <Input
-                    id="sharedItem"
-                    value={sharedItemInput}
-                    onChange={(e) => {
-                      setSharedItemInput(e.target.value);
-                      setSelectedSharedItem(null);
-                    }}
-                    placeholder="Nach Artikel suchen (Name oder Produkt-ID)"
-                    className="pr-8"
-                  />
-                  {isSearching ? (
-                    <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  ) : (
-                    <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  )}
-                </div>
+          <div className="space-y-2">
+            <Label htmlFor="sharedItem">Shared Item</Label>
+            <div className="relative">
+              <div className="relative flex-grow">
+                <Input
+                  id="sharedItem"
+                  value={sharedItemInput}
+                  onChange={(e) => {
+                    setSharedItemInput(e.target.value);
+                    setSelectedSharedItem(null);
+                  }}
+                  placeholder="Nach Artikel suchen (Name oder Produkt-ID)"
+                  className="pr-8 w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                />
+                {isSearching ? (
+                  <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                ) : (
+                  <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                )}
               </div>
-              
               {sharedItemResults.length > 0 && !selectedSharedItem && (
                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
                   {sharedItemResults.map((item) => (
@@ -385,41 +379,35 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
                   onCheckedChange={(checked) => {
                     setMultipleSizes(checked)
                     if (checked) {
-                      setNewItem({...newItem, sizes: [{ size: '', quantity: 0 }]})
+                      setNewItem({...newItem, sizes: [{ size: '', quantity: '' }]})
                     } else {
-                      setNewItem({...newItem, sizes: [{ size: 'Einheitsgröße', quantity: 0 }]})
+                      setNewItem({...newItem, sizes: [{ size: 'Einheitsgröße', quantity: '' }]})
                     }
                   }}
                 />
                 <Label htmlFor="size-mode">Mehrere Größen</Label>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
                   value={newItem.name}
                   onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                  className="col-span-3"
+                  className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="productId" className="text-right">
-                  Produkt-ID
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="productId">Produkt-ID</Label>
                 <Input
                   id="productId"
                   value={newItem.productId}
                   onChange={(e) => setNewItem({...newItem, productId: e.target.value})}
-                  className="col-span-3"
+                  className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="quantity" className="text-right">
-                  {multipleSizes ? 'Größen und Mengen' : 'Menge'}
-                </Label>
-                <div className="col-span-3">
+              <div className="space-y-2">
+                <Label htmlFor="quantity">{multipleSizes ? 'Größen und Mengen' : 'Menge'}</Label>
+                <div>
                   {multipleSizes ? (
                     <div className="max-h-[200px] overflow-y-auto px-1 py-1 rounded-md">
                       {newItem.sizes.map((size, index) => (
@@ -432,18 +420,20 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
                               newSizes[index].size = e.target.value;
                               setNewItem({...newItem, sizes: newSizes});
                             }}
-                            className="w-1/2 h-8 text-sm"
+                            className="w-1/2 h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
                           />
                           <Input
                             type="number"
                             placeholder="Menge"
-                            value={size.quantity}
+                            value={size.quantity === 0 ? "" : (size.quantity as any)}
                             onChange={(e) => {
                               const newSizes = [...newItem.sizes];
-                              newSizes[index].quantity = parseInt(e.target.value);
+                              const value = e.target.value;
+                              newSizes[index].quantity = value === "" ? "" : (parseInt(value) || 0);
                               setNewItem({...newItem, sizes: newSizes});
                             }}
-                            className="w-1/2 h-8 text-sm"
+                            onWheel={(e) => e.currentTarget.blur()}
+                            className="w-1/2 h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                           />
                         </div>
                       ))}
@@ -452,14 +442,29 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
                     <Input
                       id="quantity"
                       type="number"
-                      value={newItem.sizes[0].quantity}
-                      onChange={(e) => setNewItem({...newItem, sizes: [{ size: 'Einheitsgröße', quantity: parseInt(e.target.value) }]})}
+                      value={
+                        typeof newItem.sizes[0].quantity === 'number'
+                          ? (newItem.sizes[0].quantity === 0 ? "" : newItem.sizes[0].quantity)
+                          : (newItem.sizes[0].quantity as any)
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setNewItem({
+                          ...newItem,
+                          sizes: [{
+                            size: 'Einheitsgröße',
+                            quantity: value === "" ? "" : (parseInt(value) || 0)
+                          }]
+                        })
+                      }}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                     />
                   )}
                   
                   {multipleSizes && (
                     <Button
-                      onClick={() => setNewItem({...newItem, sizes: [...newItem.sizes, { size: '', quantity: 0 }]})}
+                      onClick={() => setNewItem({...newItem, sizes: [...newItem.sizes, { size: '', quantity: '' }]})}
                       variant="outline"
                       className="mt-2"
                       size="sm"
@@ -469,11 +474,8 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="itemImage" className="text-right">
-                  Bild
-                </Label>
-                <div className="col-span-3">
+              <div className="space-y-2">
+                <div>
                   <Input
                     id="itemImage"
                     type="file"
@@ -481,7 +483,11 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
                     className="hidden"
                     ref={fileInputRef}
                   />
-                  <Button onClick={() => fileInputRef.current?.click()} className="w-full">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-9 rounded-md border text-black bg-black/10 hover:bg-black/15 border-black focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                    type="button"
+                  >
                     <Upload className="mr-2 h-4 w-4" /> Bild hochladen
                   </Button>
                 </div>
@@ -503,6 +509,7 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
         <Button 
           onClick={handleAdd} 
           disabled={selectedSharedItem !== null || isSubmitting}
+          className="w-full h-9 rounded-md border text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-700 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
         >
           {isSubmitting ? (
             <>

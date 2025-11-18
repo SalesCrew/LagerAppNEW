@@ -41,7 +41,7 @@ export default function ReturnDialog({
 }: ReturnDialogProps) {
   const { currentUser } = useUser();
   const { toast } = useToast();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<string>('');
   const [promoterId, setPromoterId] = useState("");
   const [sizeId, setSizeId] = useState("");
   const [sizes, setSizes] = useState<ItemSize[]>([]); // Use ItemSize type
@@ -100,6 +100,7 @@ export default function ReturnDialog({
 
   // Function to perform the actual return logic
   const performReturn = async () => {
+    const qtyNum = Number.parseInt(quantity || '');
     // Add check for currentUser before proceeding
     if (!currentUser?.id) {
         toast({
@@ -117,7 +118,7 @@ export default function ReturnDialog({
       console.log('ReturnDialog - Before API call:', {
         itemId: item.id,
         itemSizeId: sizeId,
-        quantity: quantity,
+        quantity: qtyNum,
         promoterId: promoterId
       });
       
@@ -136,7 +137,7 @@ export default function ReturnDialog({
       await recordReturn({
         itemId: item.id,
         itemSizeId: sizeId,
-        quantity: quantity,
+        quantity: qtyNum,
         promoterId: promoterId,
         employeeId: currentUser.id,
         notes: notes
@@ -181,6 +182,7 @@ export default function ReturnDialog({
 
   // Initial confirmation handler - performs check first
   const handleConfirmReturn = async () => {
+    const qtyNum = Number.parseInt(quantity || '');
     // Add check for currentUser before proceeding
     if (!currentUser?.id) {
       toast({
@@ -191,7 +193,7 @@ export default function ReturnDialog({
       return;
     }
     
-    if (!item || !sizeId || !promoterId || quantity <= 0) {
+    if (!item || !sizeId || !promoterId || Number.isNaN(qtyNum) || qtyNum <= 0) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -254,7 +256,7 @@ export default function ReturnDialog({
     <>
       <Dialog open={!!item} onOpenChange={(open) => !open && !showReturnWarning && setReturningItem(null)}> 
         {/* Main Return Dialog Content */}
-        <DialogContent>
+        <DialogContent className="sm:max-w-[720px]">
           <DialogHeader>
             <DialogTitle>Artikel zurückgeben</DialogTitle>
           </DialogHeader>
@@ -263,51 +265,54 @@ export default function ReturnDialog({
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="returnItem" className="text-right">Artikel</Label>
-                <div className="col-span-3">
-                  <p>{item.name || item.product_id}</p>
+            <div className="mx-auto w-full">
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="returnItem">Artikel</Label>
+                  <Input
+                    id="returnItem"
+                    value={item.name || item.product_id}
+                    readOnly
+                    className="w-full h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                  />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="returnSize" className="text-right">Größe</Label>
-                <Select value={sizeId} onValueChange={setSizeId}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Größe auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sizes.map((size) => (
-                      <SelectItem key={size.id} value={size.id}>
-                        {size.size} (Im Umlauf: {size.in_circulation})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="returnQuantity" className="text-right">Menge</Label>
-                <Input
-                  id="returnQuantity"
-                  type="number"
-                  min="1"
-                  max={inCirculationQuantity}
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                  className="col-span-3"
-                />
-                {selectedSize && (
-                  <div className="col-span-4 text-right text-sm text-muted-foreground">
-                    Im Umlauf: {inCirculationQuantity}
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="returnPromoter" className="text-right">Promoter</Label>
-                <div className="col-span-3">
+
+                <div className="space-y-2">
+                  <Label htmlFor="returnSize">Größe</Label>
+                  <Select value={sizeId} onValueChange={setSizeId}>
+                    <SelectTrigger className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
+                      <SelectValue placeholder="Größe auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sizes.map((size) => (
+                        <SelectItem key={size.id} value={size.id}>
+                          {size.size} (Im Umlauf: {size.in_circulation})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="returnQuantity">Menge</Label>
+                  <Input
+                    id="returnQuantity"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                  />
+                  {selectedSize && (
+                    <div className="text-right text-sm text-muted-foreground">
+                      Im Umlauf: {inCirculationQuantity}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="returnPromoter">Promoter</Label>
                   <PromoterSelector 
                     value={promoterId} 
                     onChange={handlePromoterChange} 
@@ -315,17 +320,17 @@ export default function ReturnDialog({
                     includeInactive={true}
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="returnNotes" className="text-right">Notizen</Label>
-                <Input
-                  id="returnNotes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Optional: Zusätzliche Informationen"
-                  className="col-span-3"
-                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="returnNotes">Notizen</Label>
+                  <Input
+                    id="returnNotes"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Optional: Zusätzliche Informationen"
+                    className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -333,7 +338,10 @@ export default function ReturnDialog({
             <Button variant="outline" onClick={() => setReturningItem(null)} disabled={isSubmitting || isCheckingInventory}>Abbrechen</Button>
             <Button 
               onClick={handleConfirmReturn}
-              disabled={isSubmitting || isCheckingInventory || !sizeId || !promoterId || quantity <= 0 || quantity > inCirculationQuantity}
+              disabled={(() => {
+                const q = Number.parseInt(quantity || '');
+                return isSubmitting || isCheckingInventory || !sizeId || !promoterId || Number.isNaN(q) || q <= 0 || (selectedSize ? q > inCirculationQuantity : false);
+              })()}
             >
               {(isSubmitting || isCheckingInventory) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isSubmitting ? 'Wird gespeichert...' : isCheckingInventory ? 'Prüfe Inventar...' : 'Bestätigen'}

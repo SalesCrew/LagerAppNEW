@@ -84,13 +84,13 @@ export default function BrandList({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <Skeleton className="w-full h-48" />
+          <Card key={i} className="overflow-hidden rounded-2xl border border-black/5">
+            <Skeleton className="w-full h-56" />
             <CardContent className="p-4">
-              <Skeleton className="h-6 w-full mb-2" />
-              <Skeleton className="h-4 w-1/2 mx-auto" />
+              <Skeleton className="h-4 w-2/3 mb-2" />
+              <Skeleton className="h-3 w-1/3" />
             </CardContent>
           </Card>
         ))}
@@ -100,7 +100,7 @@ export default function BrandList({
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {brands.length === 0 && !loading ? (
           <div className="col-span-full text-center py-8">
             <p className="text-gray-500">Keine Marken gefunden. Fügen Sie eine neue Marke hinzu.</p>
@@ -109,19 +109,31 @@ export default function BrandList({
           brands.map((brand) => (
             <Card 
               key={`brand-${brand.id}`} 
-              className={`overflow-hidden cursor-pointer ${!brand.is_active ? 'opacity-50' : ''} transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-primary`} 
+              className={`overflow-hidden cursor-pointer ${!brand.is_active ? 'opacity-60' : ''} rounded-2xl border border-black/5 bg-white transition-all duration-300 hover:shadow-lg hover:ring-1 hover:ring-black/10`} 
               onClick={() => onBrandClick(brand.id)}
             >
-              <div className="relative">
-                <Image
-                  src={brand.logo_url || '/placeholder-logo.png'}
-                  alt={brand.name}
-                  width={300}
-                  height={200}
-                  className="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
-                />
+              <div className="relative group">
+                <div
+                  className="h-56 overflow-hidden"
+                  style={{
+                    WebkitMaskImage:
+                      'linear-gradient(to bottom, rgba(0,0,0,1) 75%, rgba(0,0,0,0.25) 100%)',
+                    maskImage:
+                      'linear-gradient(to bottom, rgba(0,0,0,1) 75%, rgba(0,0,0,0.25) 100%)',
+                  }}
+                >
+                  <Image
+                    src={brand.logo_url || '/placeholder-logo.png'}
+                    alt={brand.name}
+                    width={300}
+                    height={200}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
                 {brand.is_pinned && (
-                  <Pin className="absolute top-2 left-2 h-6 w-6 text-primary" />
+                  <div className="absolute top-3 left-3 rounded-full bg-white/70 backdrop-blur-sm border border-black/10 shadow-sm flex items-center justify-center h-8 w-8">
+                    <Pin className="h-4 w-4 text-primary" />
+                  </div>
                 )}
                 <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
@@ -150,11 +162,12 @@ export default function BrandList({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+                {/* Minimal translucent details */}
+                <div className="absolute inset-x-3 bottom-3 rounded-lg bg-white/70 backdrop-blur-sm border border-black/10 px-3 py-2 shadow-sm text-center">
+                  <h3 className="font-medium text-sm text-gray-900 truncate">{brand.name}</h3>
+                  <p className="text-xs text-gray-500">Artikel: {brand.itemCount}</p>
+                </div>
               </div>
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-lg text-center">{brand.name}</h3>
-                <p className="text-sm text-center text-gray-500">Artikel: {brand.itemCount}</p>
-              </CardContent>
             </Card>
           ))
         )}

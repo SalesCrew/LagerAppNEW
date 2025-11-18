@@ -70,6 +70,7 @@ export default function InventoryManagement() {
     const brandId = params.get('brandId');
     const itemId = params.get('itemId');
     const promoterId = params.get('promoterId');
+    const viewParam = params.get('view');
 
     if (brandId && fetchedBrandsList.length > 0) {
       const brand = fetchedBrandsList.find(b => b.id === brandId);
@@ -86,6 +87,16 @@ export default function InventoryManagement() {
         setSelectedPromoter(promoter as PromoterWithDetails | null);
         setViewMode('promoters');
         setSelectedBrand(null); 
+      }
+    }
+
+    if (!brandId && !promoterId && viewParam) {
+      if (viewParam === 'promoters') {
+        setViewMode('promoters');
+        setSelectedBrand(null);
+      } else if (viewParam === 'brands') {
+        setViewMode('brands');
+        setSelectedPromoter(null);
       }
     }
     
@@ -119,33 +130,7 @@ export default function InventoryManagement() {
       <div className={`container mx-auto p-4 ${styles.container}`}>
         <Header />
 
-        <div className="flex flex-col md:flex-row justify-between items-center mt-6 mb-6 gap-4">
-          <div className="flex items-center space-x-2 md:w-1/3">
-            <Button
-              variant={viewMode === 'brands' ? 'default' : 'outline'}
-              onClick={() => {
-                setViewMode('brands')
-                setSelectedPromoter(null)
-              }}
-            >
-              <Package className="mr-2 h-4 w-4" />
-              Marken & Artikel
-            </Button>
-            <Button
-              variant={viewMode === 'promoters' ? 'default' : 'outline'}
-              onClick={() => {
-                setViewMode('promoters')
-                setSelectedBrand(null)
-              }}
-            >
-              <History className="mr-2 h-4 w-4" />
-              Promotoren
-            </Button>
-          </div>
-          
-          <div className="flex justify-end md:w-1/3">
-          </div>
-        </div>
+        <div className="hidden"></div>
 
         {viewMode === 'brands' ? (
           <BrandView

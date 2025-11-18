@@ -85,6 +85,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              className="focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             />
           </div>
           <div className="space-y-2">
@@ -93,6 +94,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               id="address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              className="focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             />
           </div>
           <div className="space-y-2">
@@ -101,6 +103,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               id="clothingSize"
               value={clothingSize}
               onChange={(e) => setClothingSize(e.target.value)}
+              className="focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             />
           </div>
           <div className="space-y-2">
@@ -109,6 +112,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               id="phoneNumber"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
+              className="focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             />
           </div>
           <div className="space-y-2">
@@ -117,10 +121,10 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              className="focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="image">Bild</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="image"
@@ -132,6 +136,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               <Button
                 type="button"
                 onClick={() => fileInputRef.current.click()}
+                className="w-full"
               >
                 <Upload className="mr-2 h-4 w-4" /> Bild hochladen
               </Button>

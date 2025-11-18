@@ -74,7 +74,14 @@ export default function PromoterSelector({
         onValueChange={handleSelectPromoter} 
         disabled={disabled || loading}
       >
-        <SelectTrigger className="w-full justify-between">
+        <SelectTrigger
+          className={cn(
+            "w-full justify-between h-9 rounded-md border focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none",
+            value
+              ? "bg-gradient-to-br from-violet-50 to-violet-100 text-violet-700 border-violet-600/60 shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
+              : "bg-white text-foreground border-black/10"
+          )}
+        >
           <SelectValue placeholder={placeholder}>
             {selectedPromoterName || placeholder}
           </SelectValue>

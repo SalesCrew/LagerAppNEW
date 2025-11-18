@@ -75,40 +75,33 @@ export default function AddBrandDialog({ showDialog, setShowDialog, onSuccess }:
         <DialogHeader>
           <DialogTitle>Neue Marke hinzufügen</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="brandName" className="text-right">
-              Name
-            </Label>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="brandName">Name</Label>
             <Input
               id="brandName"
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
-              className="col-span-3"
+              className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="brandLogo" className="text-right">
-              Logo
-            </Label>
-            <div className="col-span-3">
-              <Input
-                id="brandLogo"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                ref={fileInputRef}
-              />
-              <Button 
-                onClick={() => fileInputRef.current?.click()} 
-                className="w-full"
-                type="button"
-              >
-                <Upload className="mr-2 h-4 w-4" /> Logo hochladen
-              </Button>
-              <p className="text-xs text-gray-500 mt-1 text-center">Optional</p>
-            </div>
+          <div className="space-y-2">
+            <Input
+              id="brandLogo"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              ref={fileInputRef}
+            />
+            <Button 
+              onClick={() => fileInputRef.current?.click()} 
+              className="w-full h-9 rounded-md border text-black bg-black/10 hover:bg-black/15 border-black focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              type="button"
+            >
+              <Upload className="mr-2 h-4 w-4" /> Logo hochladen
+            </Button>
+            <p className="text-xs text-gray-500 mt-1 text-right">Optional</p>
           </div>
           {previewUrl && (
             <div className="mt-2 flex justify-center">
@@ -125,6 +118,7 @@ export default function AddBrandDialog({ showDialog, setShowDialog, onSuccess }:
         <Button 
           onClick={handleAdd} 
           disabled={isSubmitting || brandName.trim() === ''}
+          className="w-full h-9 rounded-md border text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-700 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
         >
           {isSubmitting ? 'Wird hinzugefügt...' : 'Marke hinzufügen'}
         </Button>
