@@ -149,52 +149,52 @@ export default function RestockQuantityDialog({
           <DialogTitle>Lagerbestand auffüllen für {item.name}</DialogTitle>
         </DialogHeader>
         <div className="mx-auto w-full max-w-xl">
-          <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="size">
-                Größe
-              </Label>
-              <Select 
-                value={selectedSizeId} 
-                onValueChange={setSelectedSizeId}
-              >
+              Größe
+            </Label>
+            <Select 
+              value={selectedSizeId} 
+              onValueChange={setSelectedSizeId}
+            >
                 <SelectTrigger className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
-                  <SelectValue placeholder="Größe auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sizes.map((size) => (
-                    <SelectItem key={size.id} value={size.id}>
-                      {size.size} (Verfügbar: {size.available_quantity})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <SelectValue placeholder="Größe auswählen" />
+              </SelectTrigger>
+              <SelectContent>
+                {sizes.map((size) => (
+                  <SelectItem key={size.id} value={size.id}>
+                    {size.size} (Verfügbar: {size.available_quantity})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
             <div className="space-y-2">
               <Label htmlFor="quantity">
-                Menge
-              </Label>
-              <Input
-                id="quantity"
+              Menge
+            </Label>
+            <Input
+              id="quantity"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={quantity}
+              value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-              />
-            </div>
+            />
+          </div>
             <div className="space-y-2">
               <Label htmlFor="notes">
-                Notizen
-              </Label>
-              <Input
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional: Zusätzliche Informationen"
+              Notizen
+            </Label>
+            <Input
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Optional: Zusätzliche Informationen"
                 className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-              />
+            />
             </div>
           </div>
         </div>

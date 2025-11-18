@@ -58,7 +58,14 @@ export default function BrandView({
       {selectedBrand ? (
         <>
           <div className="flex items-center justify-between mb-0">
-            <Button onClick={handleBackToBrands}>Zurück zu Marken</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="inline-flex h-9 items-center gap-1 rounded-md px-3 border bg-white text-black border-neutral-300 hover:bg-neutral-50 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              onClick={handleBackToBrands}
+            >
+              Zurück zu Marken
+            </Button>
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"

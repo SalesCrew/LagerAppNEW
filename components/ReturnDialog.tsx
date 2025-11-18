@@ -266,7 +266,7 @@ export default function ReturnDialog({
             </div>
           ) : (
             <div className="mx-auto w-full">
-              <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="returnItem">Artikel</Label>
                   <Input
@@ -275,42 +275,42 @@ export default function ReturnDialog({
                     readOnly
                     className="w-full h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
                   />
-                </div>
-
+              </div>
+              
                 <div className="space-y-2">
                   <Label htmlFor="returnSize">Größe</Label>
-                  <Select value={sizeId} onValueChange={setSizeId}>
+                <Select value={sizeId} onValueChange={setSizeId}>
                     <SelectTrigger className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
-                      <SelectValue placeholder="Größe auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sizes.map((size) => (
-                        <SelectItem key={size.id} value={size.id}>
-                          {size.size} (Im Umlauf: {size.in_circulation})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+                    <SelectValue placeholder="Größe auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sizes.map((size) => (
+                      <SelectItem key={size.id} value={size.id}>
+                        {size.size} (Im Umlauf: {size.in_circulation})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
                 <div className="space-y-2">
                   <Label htmlFor="returnQuantity">Menge</Label>
-                  <Input
-                    id="returnQuantity"
+                <Input
+                  id="returnQuantity"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={quantity}
+                  value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-                  />
-                  {selectedSize && (
+                />
+                {selectedSize && (
                     <div className="text-right text-sm text-muted-foreground">
-                      Im Umlauf: {inCirculationQuantity}
-                    </div>
-                  )}
-                </div>
-
+                    Im Umlauf: {inCirculationQuantity}
+                  </div>
+                )}
+              </div>
+              
                 <div className="space-y-2">
                   <Label htmlFor="returnPromoter">Promoter</Label>
                   <PromoterSelector 
@@ -319,17 +319,17 @@ export default function ReturnDialog({
                     placeholder="Promoter auswählen"
                     includeInactive={true}
                   />
-                </div>
-
+              </div>
+              
                 <div className="space-y-2">
                   <Label htmlFor="returnNotes">Notizen</Label>
-                  <Input
-                    id="returnNotes"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Optional: Zusätzliche Informationen"
+                <Input
+                  id="returnNotes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Optional: Zusätzliche Informationen"
                     className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-                  />
+                />
                 </div>
               </div>
             </div>

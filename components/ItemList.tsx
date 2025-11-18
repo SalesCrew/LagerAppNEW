@@ -548,10 +548,11 @@ export default function ItemList({
             />
           </div>
           <Button
+            variant="ghost"
             onClick={handleMassEditConfirm}
             disabled={isSubmitting || !selectedAction || !selectedPromoter || Object.values(itemQuantities).every(q => q.quantity <= 0)}
             className={cn(
-              "h-9 rounded-md inline-flex items-center gap-1 px-3 border transition-colors focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+              "h-9 rounded-md inline-flex items-center gap-1 px-3 border transition-colors focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none shadow-[0_8px_24px_rgba(0,0,0,0.06)] disabled:bg-transparent",
               selectedAction === 'take-out'
                 ? "bg-gradient-to-br from-red-50/60 to-red-100/60 text-red-600 border-red-500 hover:from-red-100/60 hover:to-red-200/60"
                 : selectedAction === 'return'
@@ -576,7 +577,7 @@ export default function ItemList({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4 pb-4">
         {sortedItems.map((item) => (
-          <Card key={item.id} className={`overflow-hidden ${!item.isActive ? 'opacity-60' : ''} transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-primary`}>
+          <Card key={item.id} className={`overflow-hidden ${!item.isActive ? 'opacity-60' : ''} transition-all duration-300 shadow-sm hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]`}>
             <CardContent className="p-0">
               <div className="relative">
                 <div className="h-40 bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -656,22 +657,22 @@ export default function ItemList({
                   </div>
                   
                   <div className="mt-4 rounded-md border border-dotted border-neutral-300/60 bg-neutral-50/60 p-3">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex flex-col items-center justify-center text-center">
                         <p className="text-gray-500">Original:</p>
-                        <p>{item.quantities?.originalQuantity || 0}</p>
+                        <p className="font-medium">{item.quantities?.originalQuantity || 0}</p>
                       </div>
-                      <div>
+                      <div className="flex flex-col items-center justify-center text-center">
                         <p className="text-gray-500">Available:</p>
-                        <p>{item.quantities?.availableQuantity || 0}</p>
+                        <p className="font-medium">{item.quantities?.availableQuantity || 0}</p>
                       </div>
-                      <div>
+                      <div className="flex flex-col items-center justify-center text-center">
                         <p className="text-gray-500">In Circulation:</p>
-                        <p>{item.quantities?.inCirculation || 0}</p>
+                        <p className="font-medium">{item.quantities?.inCirculation || 0}</p>
                       </div>
-                      <div>
+                      <div className="flex flex-col items-center justify-center text-center">
                         <p className="text-gray-500">Total:</p>
-                        <p>{item.quantities?.totalQuantity || 0}</p>
+                        <p className="font-medium">{item.quantities?.totalQuantity || 0}</p>
                       </div>
                     </div>
                   </div>
@@ -745,9 +746,12 @@ export default function ItemList({
                         size="sm" 
                         onClick={() => handleQuantityChange(item, 'burn')}
                         disabled={!item.isActive || (item.quantities?.inCirculation || 0) <= 0}
+                        className="text-amber-600 hover:text-amber-700"
                       >
-                        <Flame className="mr-1" size={14} />
-                        Burn
+                        <Flame className="mr-1 h-[14px] w-[14px] text-amber-500" />
+                        <span className="bg-gradient-to-r from-amber-300 to-amber-600 bg-clip-text text-transparent">
+                          Burn
+                        </span>
                       </Button>
                       <Button 
                         variant="outline" 

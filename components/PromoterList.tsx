@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,41 @@ interface PromoterListProps {
   promoters: PromoterWithDetails[];
   onPromoterUpdated: () => void;
   onPromoterClick?: (promoter: PromoterWithDetails) => void;
+}
+
+// Auto-fit a single-line heading by shrinking font-size until it fits
+function AutoFitName({ name }: { name: string }) {
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
+
+  useEffect(() => {
+    const el = headingRef.current;
+    if (!el) return;
+
+    const fit = () => {
+      // Start from a comfortable size and shrink as needed
+      let fontSize = 18; // ~ text-lg
+      el.style.whiteSpace = 'nowrap';
+      el.style.overflow = 'hidden';
+      el.style.display = 'block';
+      el.style.fontSize = `${fontSize}px`;
+
+      // Reduce until it fits in one line or hit a very small floor
+      while (el.scrollWidth > el.clientWidth && fontSize > 8) {
+        fontSize -= 0.5;
+        el.style.fontSize = `${fontSize}px`;
+      }
+    };
+
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, [name]);
+
+  return (
+    <h3 ref={headingRef} className="font-semibold text-center">
+      {name}
+    </h3>
+  );
 }
 
 export default function PromoterList({ 
@@ -136,7 +171,7 @@ export default function PromoterList({
         ) : sortedPromoters.map((promoter) => (
           <Card 
             key={promoter.id} 
-            className={`overflow-hidden ${!promoter.is_active ? 'opacity-50' : ''} cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-primary`}
+            className={`overflow-hidden ${!promoter.is_active ? 'opacity-50' : ''} cursor-pointer transition-all duration-300 shadow-sm hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]`}
             onClick={(e) => {
               if ((e.target as HTMLElement).closest('.dropdown-menu-container')) {
                 return;
@@ -150,7 +185,7 @@ export default function PromoterList({
                 alt={promoter.name}
                 width={300}
                 height={200}
-                className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-48 object-cover"
               />
               {isPinned(promoter.id) && (
                 <Pin className="absolute top-2 left-2 h-6 w-6 text-primary" />
@@ -207,31 +242,46 @@ export default function PromoterList({
                 </DropdownMenu>
               </div>
             </div>
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-lg text-center">{promoter.name}</h3>
-              {promoter.transactionCount && promoter.transactionCount > 0 && (
-                <p className="text-sm text-center text-gray-500">
-                  Transaktionen: {promoter.transactionCount}
-                </p>
-              )}
-              {promoter.phone_number && (
-                <p className="text-sm text-center text-gray-500 mt-1">
-                  Tel: {promoter.phone_number}
-                </p>
-              )}
-              {promoter.clothing_size && (
-                <p className="text-sm text-center text-gray-500 mt-1">
-                  Größe: {promoter.clothing_size}
-                </p>
-              )}
-              {promoter.address && (
-                <p className="text-sm text-center text-gray-500 mt-1">
-                  Adresse: {promoter.address}
-                </p>
-              )}
+            <CardContent className="p-4 flex flex-col h-full">
+              <AutoFitName name={promoter.name} />
+
+              {/* Info container - fixed fields with graceful null states */}
+              <div className="mt-3 rounded-lg border border-neutral-200/60 bg-[rgba(255,255,255,0.85)] backdrop-blur-sm p-3 min-h-[180px]">
+                <div className="space-y-3">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-neutral-500">Transaktionen</span>
+                    <span className="text-sm font-medium text-neutral-900 min-h-[1.25rem]">
+                      {typeof promoter.transactionCount === 'number' ? promoter.transactionCount : '—'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-neutral-500">Tel</span>
+                    <span className="text-sm font-medium text-neutral-900 min-h-[1.25rem] truncate">
+                      {promoter.phone_number || '—'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-neutral-500">Größe</span>
+                    <span className="text-sm font-medium text-neutral-900 min-h-[1.25rem]">
+                      {promoter.clothing_size || '—'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-neutral-500">Adresse</span>
+                    <span className="text-sm font-medium text-neutral-900 min-h-[2.5rem] break-words max-h-10 overflow-hidden">
+                      {promoter.address || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-px bg-gradient-to-r from-transparent via-neutral-300/30 to-transparent my-3" />
+
+              {/* Verlauf button - neutral pill */}
               <Button 
-                variant="outline" 
-                className="w-full mt-2"
+                variant="ghost"
+                className="w-full h-9 rounded-md border bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShowHistory(promoter);

@@ -288,23 +288,23 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
           <div className="space-y-2">
             <Label htmlFor="sharedItem">Shared Item</Label>
             <div className="relative">
-              <div className="relative flex-grow">
-                <Input
-                  id="sharedItem"
-                  value={sharedItemInput}
-                  onChange={(e) => {
-                    setSharedItemInput(e.target.value);
-                    setSelectedSharedItem(null);
-                  }}
-                  placeholder="Nach Artikel suchen (Name oder Produkt-ID)"
+                <div className="relative flex-grow">
+                  <Input
+                    id="sharedItem"
+                    value={sharedItemInput}
+                    onChange={(e) => {
+                      setSharedItemInput(e.target.value);
+                      setSelectedSharedItem(null);
+                    }}
+                    placeholder="Nach Artikel suchen (Name oder Produkt-ID)"
                   className="pr-8 w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-                />
-                {isSearching ? (
-                  <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                ) : (
-                  <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                )}
-              </div>
+                  />
+                  {isSearching ? (
+                    <Loader2 className="h-4 w-4 animate-spin absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  ) : (
+                    <Search className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  )}
+                </div>
               {sharedItemResults.length > 0 && !selectedSharedItem && (
                 <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
                   {sharedItemResults.map((item) => (

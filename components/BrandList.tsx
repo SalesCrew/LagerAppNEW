@@ -107,9 +107,9 @@ export default function BrandList({
           </div>
         ) : (
           brands.map((brand) => (
-            <Card 
+          <Card 
               key={`brand-${brand.id}`} 
-              className={`overflow-hidden cursor-pointer ${!brand.is_active ? 'opacity-60' : ''} rounded-2xl border border-black/5 bg-white transition-all duration-300 hover:shadow-lg hover:ring-1 hover:ring-black/10`} 
+            className={`overflow-hidden cursor-pointer ${!brand.is_active ? 'opacity-60' : ''} rounded-2xl border border-black/5 bg-white transition-all duration-300 shadow-sm hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]`} 
               onClick={() => onBrandClick(brand.id)}
             >
               <div className="relative group">
@@ -127,7 +127,7 @@ export default function BrandList({
                     alt={brand.name}
                     width={300}
                     height={200}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 {brand.is_pinned && (
@@ -163,7 +163,7 @@ export default function BrandList({
                   </DropdownMenu>
                 </div>
                 {/* Minimal translucent details */}
-                <div className="absolute inset-x-3 bottom-3 rounded-lg bg-white/70 backdrop-blur-sm border border-black/10 px-3 py-2 shadow-sm text-center">
+                <div className="absolute inset-x-3 bottom-3 rounded-lg bg-[rgba(255,255,255,0.85)] backdrop-blur-sm border border-black/10 px-3 py-2 shadow-sm text-center">
                   <h3 className="font-medium text-sm text-gray-900 truncate">{brand.name}</h3>
                   <p className="text-xs text-gray-500">Artikel: {brand.itemCount}</p>
                 </div>

@@ -144,7 +144,7 @@ export default function BurnItemDialog({
           <DialogTitle>Artikel als verloren/beschädigt markieren</DialogTitle>
         </DialogHeader>
         <div className="mx-auto w-full max-w-xl">
-          <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="burnItem">Artikel</Label>
               <Input
@@ -153,42 +153,42 @@ export default function BurnItemDialog({
                 readOnly
                 className="w-full h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
               />
-            </div>
-
+          </div>
+          
             <div className="space-y-2">
               <Label htmlFor="burnSize">Größe</Label>
-              <Select value={sizeId} onValueChange={setSizeId}>
+            <Select value={sizeId} onValueChange={setSizeId}>
                 <SelectTrigger className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
-                  <SelectValue placeholder="Größe auswählen" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sizes.map((size) => (
-                    <SelectItem key={size.id} value={size.id}>
-                      {size.size} (Im Umlauf: {size.in_circulation})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
+                <SelectValue placeholder="Größe auswählen" />
+              </SelectTrigger>
+              <SelectContent>
+                {sizes.map((size) => (
+                  <SelectItem key={size.id} value={size.id}>
+                    {size.size} (Im Umlauf: {size.in_circulation})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
             <div className="space-y-2">
               <Label htmlFor="burnQuantity">Menge</Label>
-              <Input
-                id="burnQuantity"
+            <Input
+              id="burnQuantity"
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                value={burnQuantity}
+              value={burnQuantity}
                 onChange={(e) => setBurnQuantity(e.target.value)}
                 className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-              />
-              {selectedSize && (
+            />
+            {selectedSize && (
                 <div className="text-right text-sm text-muted-foreground">
-                  Im Umlauf: {inCirculationQuantity}
-                </div>
-              )}
-            </div>
-
+                Im Umlauf: {inCirculationQuantity}
+              </div>
+            )}
+          </div>
+          
             <div className="space-y-2">
               <Label htmlFor="burnPromoter">Promoter</Label>
               <PromoterSelector 
@@ -197,17 +197,17 @@ export default function BurnItemDialog({
                 placeholder="Promoter auswählen"
                 includeInactive={true}
               />
-            </div>
-
+          </div>
+          
             <div className="space-y-2">
               <Label htmlFor="burnNotes">Notizen</Label>
-              <Input
-                id="burnNotes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional: Grund für Verlust/Beschädigung"
+            <Input
+              id="burnNotes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Optional: Grund für Verlust/Beschädigung"
                 className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-              />
+            />
             </div>
           </div>
         </div>
