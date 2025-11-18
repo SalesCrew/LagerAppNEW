@@ -1,20 +1,17 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CalendarIcon, Loader2, ArrowLeft, ArrowRight, BarChart3 } from 'lucide-react'
+import { CalendarIcon, Loader2, ArrowLeft, ArrowRight } from 'lucide-react'
 import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { useTransactions } from '@/hooks/useTransactions'
 import { TransactionType } from '@/lib/api/transactions'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface ItemHistoryDialogProps {
   item: {
@@ -26,17 +23,9 @@ interface ItemHistoryDialogProps {
 }
 
 export default function ItemHistoryDialog({ item, setShowHistoryDialog }: ItemHistoryDialogProps) {
-  const { getItemHistoryDetailed, getItemStats } = useTransactions();
+  const { getItemHistoryDetailed } = useTransactions();
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [stats, setStats] = useState<{
-    totalTakeOuts: number;
-    totalReturns: number;
-    totalBurns: number;
-    totalRestocks: number;
-    mostFrequentPromoter: { id: string; name: string; count: number } | null;
-  } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null);
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
   const [pagination, setPagination] = useState({
@@ -44,7 +33,6 @@ export default function ItemHistoryDialog({ item, setShowHistoryDialog }: ItemHi
     totalPages: 0,
     currentPage: 1
   });
-  const [activeTab, setActiveTab] = useState("history");
 
   // Load transaction history
   useEffect(() => {
@@ -90,36 +78,6 @@ export default function ItemHistoryDialog({ item, setShowHistoryDialog }: ItemHi
       fetchTransactions();
     }
   }, [item, getItemHistoryDetailed, transactionType, dateRange, pagination.currentPage]);
-
-  // Load item statistics
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setStatsLoading(true);
-        const result = await getItemStats(item.id);
-        if (result) {
-          setStats(result);
-        }
-      } catch (error) {
-        console.error("Error fetching item stats:", error);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-
-    if (item?.id && activeTab === "stats") {
-      fetchStats();
-    }
-  }, [item, getItemStats, activeTab]);
-
-  // Get unique promoters from transactions
-  const uniquePromoters = useMemo(() => {
-    const promoters = transactions
-      .filter(t => t.promoters)
-      .map(t => ({ id: t.promoter_id, name: t.promoters.name }));
-    
-    return [...new Map(promoters.map(p => [p.id, p])).values()];
-  }, [transactions]);
 
   // Reset filters
   const resetFilters = () => {
@@ -185,216 +143,151 @@ export default function ItemHistoryDialog({ item, setShowHistoryDialog }: ItemHi
         <DialogHeader>
           <DialogTitle>Verlauf für {item.name} (ID: {item.product_id})</DialogTitle>
         </DialogHeader>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="history">Transaktionsverlauf</TabsTrigger>
-            <TabsTrigger value="stats">Statistiken</TabsTrigger>
-          </TabsList>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Select 
+            value={transactionType || "all"} 
+            onValueChange={(value) => setTransactionType(value === "all" ? null : value as TransactionType)}
+          >
+            <SelectTrigger
+              className={`w-[160px] h-9 rounded-md border focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none
+              ${transactionType === 'take_out' ? 'bg-red-50/60 text-red-600 border-red-500' : ''}
+              ${transactionType === 'return' ? 'bg-green-50/60 text-green-600 border-green-500' : ''}
+              ${transactionType === 'burn' ? 'bg-amber-50/60 text-amber-600 border-amber-500' : ''}
+              ${transactionType === 'restock' ? 'bg-blue-50/60 text-blue-600 border-blue-500' : ''}
+            `}
+            >
+              <SelectValue placeholder="Aktion" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Aktionen</SelectItem>
+              <SelectItem value="take_out" className="text-red-500 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-500">Take Out</SelectItem>
+              <SelectItem value="return" className="text-green-600 data-[highlighted]:bg-green-50 data-[highlighted]:text-green-600">Return</SelectItem>
+              <SelectItem value="burn" className="text-amber-600 data-[highlighted]:bg-amber-50 data-[highlighted]:text-amber-600">Burn</SelectItem>
+              <SelectItem value="restock" className="text-blue-600 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-600">Restock</SelectItem>
+            </SelectContent>
+          </Select>
           
-          <TabsContent value="history">
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Select 
-                value={transactionType || "all"} 
-                onValueChange={(value) => setTransactionType(value === "all" ? null : value as TransactionType)}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-[190px] h-9 rounded-md border justify-start text-left font-normal focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
               >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Aktion" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Aktionen</SelectItem>
-                  <SelectItem value="take_out">Take Out</SelectItem>
-                  <SelectItem value="return">Return</SelectItem>
-                  <SelectItem value="burn">Burn</SelectItem>
-                  <SelectItem value="restock">Restock</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dateRange.from ? (
-                      dateRange.to ? (
-                        <>
-                          {format(dateRange.from, "dd.MM.yy", { locale: de })} -{" "}
-                          {format(dateRange.to, "dd.MM.yy", { locale: de })}
-                        </>
-                      ) : (
-                        format(dateRange.from, "dd.MM.yyyy", { locale: de })
-                      )
-                    ) : (
-                      "Datum auswählen"
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={dateRange.from || undefined}
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    numberOfMonths={1}
-                    locale={de}
-                    className="w-[280px]"
-                  />
-                </PopoverContent>
-              </Popover>
-              
-              <Button onClick={resetFilters} size="sm" className="w-[140px]">
-                Filter zurücksetzen
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd.MM.yy", { locale: de })} -{" "}
+                      {format(dateRange.to, "dd.MM.yy", { locale: de })}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd.MM.yyyy", { locale: de })
+                  )
+                ) : (
+                  "Datum auswählen"
+                )}
               </Button>
-            </div>
-            
-            <div className="mt-4 max-h-[60vh] overflow-auto">
-              {loading ? (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Datum</TableHead>
-                        <TableHead>Menge</TableHead>
-                        <TableHead>Größe</TableHead>
-                        <TableHead>Aktion</TableHead>
-                        <TableHead>Promoter</TableHead>
-                        <TableHead>Mitarbeiter</TableHead>
-                        <TableHead>Notizen</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                            Keine Transaktionen gefunden
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        transactions.map((transaction) => (
-                          <TableRow key={transaction.id}>
-                            <TableCell>{formatDate(transaction.timestamp)}</TableCell>
-                            <TableCell>{transaction.quantity}</TableCell>
-                            <TableCell>{transaction.item_sizes.size}</TableCell>
-                            <TableCell className={getTransactionTypeColor(transaction.transaction_type)}>
-                              {getTransactionTypeDisplay(transaction.transaction_type)}
-                            </TableCell>
-                            <TableCell>
-                              {transaction.promoters?.name || (transaction.transaction_type === 'restock' ? 'Lager' : '-')}
-                            </TableCell>
-                            <TableCell>{transaction.employees.initials}</TableCell>
-                            <TableCell>{transaction.notes || '-'}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                  
-                  {pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-muted-foreground">
-                        Seite {pagination.currentPage} von {pagination.totalPages} ({pagination.totalCount} Einträge)
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => changePage(pagination.currentPage - 1)}
-                          disabled={pagination.currentPage <= 1}
-                        >
-                          <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => changePage(pagination.currentPage + 1)}
-                          disabled={pagination.currentPage >= pagination.totalPages}
-                        >
-                          <ArrowRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </TabsContent>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange.from || undefined}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={1}
+                locale={de}
+                className="w-[280px]"
+              />
+            </PopoverContent>
+          </Popover>
           
-          <TabsContent value="stats">
-            {statsLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : stats ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Transaktionsübersicht</CardTitle>
-                    <CardDescription>Zusammenfassung aller Transaktionen</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Take Outs:</span>
-                        <Badge variant="outline" className="text-red-500">{stats.totalTakeOuts}</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Returns:</span>
-                        <Badge variant="outline" className="text-green-500">{stats.totalReturns}</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Burns:</span>
-                        <Badge variant="outline" className="text-orange-500">{stats.totalBurns}</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Restocks:</span>
-                        <Badge variant="outline" className="text-blue-500">{stats.totalRestocks}</Badge>
-                      </div>
-                      <div className="flex justify-between items-center pt-2 border-t">
-                        <span className="text-muted-foreground">Gesamt:</span>
-                        <Badge variant="outline">
-                          {stats.totalTakeOuts + stats.totalReturns + stats.totalBurns + stats.totalRestocks}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Häufigster Promoter</CardTitle>
-                    <CardDescription>Promoter mit den meisten Transaktionen</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {stats.mostFrequentPromoter ? (
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Name:</span>
-                          <span className="font-medium">{stats.mostFrequentPromoter.name}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Anzahl Transaktionen:</span>
-                          <Badge>{stats.mostFrequentPromoter.count}</Badge>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        Keine Promoter-Daten verfügbar
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <div className="text-center py-4 text-muted-foreground">
-                Keine Statistiken verfügbar
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          <Button
+            onClick={resetFilters}
+            size="sm"
+            className="w-[160px] h-9 rounded-md border text-red-600 bg-red-500/10 hover:bg-red-500/15 border-red-500 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+          >
+            Filter zurücksetzen
+          </Button>
+        </div>
+        
+        <div className="mt-4 max-h-[60vh] overflow-auto">
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Datum</TableHead>
+                    <TableHead>Menge</TableHead>
+                    <TableHead>Größe</TableHead>
+                    <TableHead>Aktion</TableHead>
+                    <TableHead>Promoter</TableHead>
+                    <TableHead>Mitarbeiter</TableHead>
+                    <TableHead>Notizen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                        Keine Transaktionen gefunden
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    transactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{formatDate(transaction.timestamp)}</TableCell>
+                        <TableCell>{transaction.quantity}</TableCell>
+                        <TableCell>{transaction.item_sizes.size}</TableCell>
+                        <TableCell className={getTransactionTypeColor(transaction.transaction_type)}>
+                          {getTransactionTypeDisplay(transaction.transaction_type)}
+                        </TableCell>
+                        <TableCell>
+                          {transaction.promoters?.name || (transaction.transaction_type === 'restock' ? 'Lager' : '-')}
+                        </TableCell>
+                        <TableCell>{transaction.employees.initials}</TableCell>
+                        <TableCell>{transaction.notes || '-'}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Seite {pagination.currentPage} von {pagination.totalPages} ({pagination.totalCount} Einträge)
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => changePage(pagination.currentPage - 1)}
+                      disabled={pagination.currentPage <= 1}
+                      className="h-8 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => changePage(pagination.currentPage + 1)}
+                      disabled={pagination.currentPage >= pagination.totalPages}
+                      className="h-8 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

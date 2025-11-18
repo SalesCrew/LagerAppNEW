@@ -148,12 +148,24 @@ export default function PromoterList({
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <Skeleton className="w-full h-48" />
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card key={`promoter-skeleton-${i}`} className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+            <div className="h-48">
+              <Skeleton className="w-full h-full" />
+            </div>
             <CardContent className="p-4">
-              <Skeleton className="h-6 w-full mb-2" />
-              <Skeleton className="h-4 w-1/2 mx-auto" />
+              <Skeleton className="h-5 w-3/4 mx-auto mb-3" />
+              <div className="rounded-lg border border-neutral-200/60 bg-[rgba(255,255,255,0.85)] p-3">
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-4 w-1/4" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <Skeleton className="h-9 w-full rounded-md" />
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -330,4 +342,3 @@ export default function PromoterList({
     </>
   )
 }
-

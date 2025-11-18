@@ -15,6 +15,7 @@ import { de } from "date-fns/locale";
 import { useTransactions } from '@/hooks/useTransactions';
 import { TransactionType } from '@/lib/api/transactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 interface PromoterHistoryDialogProps {
   promoter: {
@@ -146,31 +147,37 @@ export default function PromoterHistoryDialog({ promoter, setShowHistoryDialog }
           <DialogTitle>Verlauf für {promoter.name}</DialogTitle>
         </DialogHeader>
         
-        <Tabs value="history" defaultValue="history">
-          <TabsList className="w-full">
-            <TabsTrigger value="history" className="w-full">Transaktionsverlauf</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="history">
+        <div>
             <div className="flex flex-wrap gap-2 mb-4">
               <Select 
                 value={transactionType || "all"} 
                 onValueChange={(value) => setTransactionType(value === "all" ? null : value as TransactionType)}
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger
+                  className={cn(
+                    "w-[140px] h-9 rounded-md border focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none",
+                    transactionType === "take_out" && "bg-gradient-to-br from-red-50/60 to-red-100/60 text-red-500 border-red-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+                    transactionType === "return" && "bg-gradient-to-br from-green-50/60 to-green-100/60 text-green-600 border-green-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+                    transactionType === "burn" && "bg-gradient-to-br from-amber-50/60 to-amber-100/60 text-amber-600 border-amber-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)]",
+                    (!transactionType) && "bg-white text-foreground border-neutral-300"
+                  )}
+                >
                   <SelectValue placeholder="Aktion" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alle Aktionen</SelectItem>
-                  <SelectItem value="take_out">Take Out</SelectItem>
-                  <SelectItem value="return">Return</SelectItem>
-                  <SelectItem value="burn">Burn</SelectItem>
+                  <SelectItem value="take_out" className="text-red-500 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-500">Take Out</SelectItem>
+                  <SelectItem value="return" className="text-green-500 data-[highlighted]:bg-green-50 data-[highlighted]:text-green-500">Return</SelectItem>
+                  <SelectItem value="burn" className="text-amber-600 data-[highlighted]:bg-amber-50 data-[highlighted]:text-amber-600">Burn</SelectItem>
                 </SelectContent>
               </Select>
               
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
+                  <Button
+                    variant="outline"
+                    className="w-[180px] h-9 justify-start text-left font-normal rounded-md border focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                  >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange.from ? (
                       dateRange.to ? (
@@ -200,7 +207,10 @@ export default function PromoterHistoryDialog({ promoter, setShowHistoryDialog }
                 </PopoverContent>
               </Popover>
               
-              <Button onClick={resetFilters} size="sm" className="w-[140px]">
+              <Button
+                onClick={resetFilters}
+                className="w-[140px] h-9 rounded-md border text-red-600 bg-red-500/10 hover:bg-red-500/15 border-red-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)] focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              >
                 Filter zurücksetzen
               </Button>
             </div>
@@ -277,8 +287,7 @@ export default function PromoterHistoryDialog({ promoter, setShowHistoryDialog }
                 </>
               )}
             </div>
-          </TabsContent>
-        </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   )

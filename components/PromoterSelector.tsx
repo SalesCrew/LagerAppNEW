@@ -8,6 +8,7 @@ import { Promoter } from '@/lib/api/promoters';
 import { Spinner } from '@/components/ui/spinner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AddPromoterDialog from './AddPromoterDialog';
+import { Input } from "@/components/ui/input";
 
 interface PromoterSelectorProps {
   value: string;
@@ -16,6 +17,8 @@ interface PromoterSelectorProps {
   className?: string;
   disabled?: boolean;
   includeInactive?: boolean;
+  colorVariant?: "violet" | "default";
+  forceWhite?: boolean;
 }
 
 export default function PromoterSelector({
@@ -24,9 +27,12 @@ export default function PromoterSelector({
   placeholder = "Promoter auswählen",
   className,
   disabled = false,
-  includeInactive = false
+  includeInactive = false,
+  colorVariant = "default",
+  forceWhite = false
 }: PromoterSelectorProps) {
   const { promoters, loading, addPromoter, refreshPromoters } = usePromoters();
+  const [search, setSearch] = useState("");
   
   // Debug: Log props and promoters
   useEffect(() => {
@@ -36,7 +42,8 @@ export default function PromoterSelector({
   
   // Filter promoters based on active status
   const filteredPromoters = promoters
-    .filter(p => includeInactive || p.is_active);
+    .filter(p => includeInactive || p.is_active)
+    .filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
     
   // Debug: Log filtered promoters
   useEffect(() => {
@@ -77,7 +84,7 @@ export default function PromoterSelector({
         <SelectTrigger
           className={cn(
             "w-full justify-between h-9 rounded-md border focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none",
-            value
+            value && colorVariant === "violet" && !forceWhite
               ? "bg-gradient-to-br from-violet-50 to-violet-100 text-violet-700 border-violet-600/60 shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
               : "bg-white text-foreground border-black/10"
           )}
@@ -86,7 +93,17 @@ export default function PromoterSelector({
             {selectedPromoterName || placeholder}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent position="popper" className="max-h-[250px]">
+        <SelectContent position="popper" className="max-h-[260px]">
+          {/* Inline search bar - keep focus, no stroke */}
+          <div className="px-2 pt-2">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Suchen..."
+              className="h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              onKeyDown={(e) => e.stopPropagation()}
+            />
+          </div>
           {loading ? (
             <div className="py-6 text-center">
               <Spinner className="mx-auto" />

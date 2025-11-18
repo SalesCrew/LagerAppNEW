@@ -85,11 +85,16 @@ export default function BrandList({
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="overflow-hidden rounded-2xl border border-black/5">
-            <Skeleton className="w-full h-56" />
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card key={`brand-skeleton-${i}`} className="overflow-hidden rounded-2xl border border-black/5 bg-white">
+            <div className="h-56 overflow-hidden">
+              <Skeleton className="w-full h-full" />
+            </div>
             <CardContent className="p-4">
-              <Skeleton className="h-4 w-2/3 mb-2" />
+              <div className="flex items-center justify-between mb-2">
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
               <Skeleton className="h-3 w-1/3" />
             </CardContent>
           </Card>

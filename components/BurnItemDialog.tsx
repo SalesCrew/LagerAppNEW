@@ -212,7 +212,7 @@ export default function BurnItemDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setBurningItem(null)}>Abbrechen</Button>
+          <Button variant="outline" className="h-9" onClick={() => setBurningItem(null)}>Abbrechen</Button>
           <Button 
             onClick={() => {
               console.log('BurnItemDialog - Confirm button clicked');
@@ -222,6 +222,7 @@ export default function BurnItemDialog({
               const q = Number.parseInt(burnQuantity || '');
               return isSubmitting || !sizeId || !promoterId || Number.isNaN(q) || q <= 0 || (selectedSize ? q > inCirculationQuantity : false);
             })()}
+            className="h-9 rounded-md border text-green-600 bg-green-500/10 hover:bg-green-500/15 border-green-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)] focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
           >
             {isSubmitting ? 'Wird gespeichert...' : 'Bestätigen'}
           </Button>

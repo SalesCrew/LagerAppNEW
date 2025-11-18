@@ -277,20 +277,20 @@ export default function TransactionHistoryView() {
             <CardTitle>Filter</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <div className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
+              <div className="relative lg:col-span-3 rounded-md">
                 <Input
                   placeholder="Suche nach Artikel, Produkt-ID..."
                   value={searchTerm}
                   onChange={handleSearchChange}
-                  className="pl-9"
+                  className="pl-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 {searchTerm && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1.5 h-7 w-7 p-0"
+                    className="absolute right-1 top-1.5 h-7 w-7 p-0 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
                     onClick={() => {
                       setSearchTerm('');
                       updateFilters({ searchTerm: undefined });
@@ -302,15 +302,23 @@ export default function TransactionHistoryView() {
               </div>
               
               <Select value={selectedType} onValueChange={handleTypeChange}>
-                <SelectTrigger>
+                <SelectTrigger
+                  className={cn(
+                    "h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none rounded-md border lg:col-span-2",
+                    selectedType === "take_out" && "bg-red-50/60 text-red-600 border-red-500",
+                    selectedType === "return" && "bg-green-50/60 text-green-600 border-green-500",
+                    selectedType === "burn" && "bg-amber-50/60 text-amber-600 border-amber-500",
+                    selectedType === "restock" && "bg-blue-50/60 text-blue-600 border-blue-500"
+                  )}
+                >
                   <SelectValue placeholder="Aktionstyp" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alle Aktionen</SelectItem>
-                  <SelectItem value="take_out">Take Out</SelectItem>
-                  <SelectItem value="return">Return</SelectItem>
-                  <SelectItem value="burn">Burn</SelectItem>
-                  <SelectItem value="restock">Restock</SelectItem>
+                  <SelectItem value="take_out" className="text-red-500 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-500">Take Out</SelectItem>
+                  <SelectItem value="return" className="text-green-500 data-[highlighted]:bg-green-50 data-[highlighted]:text-green-500">Return</SelectItem>
+                  <SelectItem value="burn" className="text-amber-600 data-[highlighted]:bg-amber-50 data-[highlighted]:text-amber-600">Burn</SelectItem>
+                  <SelectItem value="restock" className="text-blue-600 data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-600">Restock</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -318,7 +326,13 @@ export default function TransactionHistoryView() {
                 value={selectedPromoter}
                 onValueChange={handlePromoterChange}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger
+                  className={cn(
+                    "h-9 rounded-md border focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none lg:col-span-2",
+                    selectedPromoter !== "all" &&
+                      "bg-gradient-to-br from-violet-50 to-violet-100 text-violet-700 border-violet-600/60"
+                  )}
+                >
                   <SelectValue placeholder="Promoter wählen" />
                 </SelectTrigger>
                 <SelectContent>
@@ -330,30 +344,15 @@ export default function TransactionHistoryView() {
                   ))}
                 </SelectContent>
               </Select>
-              
-              <Select value={selectedEmployee} onValueChange={handleEmployeeChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Mitarbeiter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle Mitarbeiter</SelectItem>
-                  {employees && employees.length > 0 && employees.map(employee => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.full_name} ({employee.initials})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex flex-wrap gap-4 items-center">
+
+              {/* Zeitraum auswählen - compact button */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
-                    id="date"
-                    variant={"outline"}
+                    id="date-inline"
+                    variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "h-9 rounded-md border justify-start text-left focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none lg:col-span-2",
                       !dateRange && "text-muted-foreground"
                     )}
                   >
@@ -361,14 +360,14 @@ export default function TransactionHistoryView() {
                     {dateRange?.from ? (
                       dateRange.to ? (
                         <>
-                          {format(dateRange.from, "dd.MM.yy", { locale: de })} - {" "}
+                          {format(dateRange.from, "dd.MM.yy", { locale: de })} -{" "}
                           {format(dateRange.to, "dd.MM.yy", { locale: de })}
                         </>
                       ) : (
                         format(dateRange.from, "dd.MM.yy", { locale: de })
                       )
                     ) : (
-                      <span>Zeitraum auswählen</span>
+                      <span>Zeitraum</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -390,11 +389,34 @@ export default function TransactionHistoryView() {
                 </PopoverContent>
               </Popover>
               
-              <Button variant="outline" onClick={handleResetFilters}>
+              <Select value={selectedEmployee} onValueChange={handleEmployeeChange}>
+                <SelectTrigger className="h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none rounded-md border lg:col-span-3">
+                  <SelectValue placeholder="Mitarbeiter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle Mitarbeiter</SelectItem>
+                  {employees && employees.length > 0 && employees.map(employee => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.full_name} ({employee.initials})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-wrap gap-4 items-center justify-end">
+              <Button
+                variant="ghost"
+                onClick={handleResetFilters}
+                className="h-9 rounded-md border text-red-600 bg-red-500/10 hover:bg-red-500/15 border-red-500 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              >
                 Filter zurücksetzen
               </Button>
               
-              <Button variant="default" onClick={() => refreshTransactions()}>
+              <Button
+                onClick={() => refreshTransactions()}
+                className="h-9 rounded-md border text-green-600 bg-green-500/10 hover:bg-green-500/15 border-green-500 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              >
                 Aktualisieren
               </Button>
 
@@ -402,6 +424,7 @@ export default function TransactionHistoryView() {
                 variant="secondary"
                 onClick={handleExport}
                 disabled={selectedTransactionIds.size === 0}
+                className="h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
               >
                 ÜB exportieren
               </Button>
@@ -442,8 +465,20 @@ export default function TransactionHistoryView() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        transactions.map((transaction: any) => (
-                          <TableRow key={transaction.id}>
+                        transactions.map((transaction: any) => {
+                          const type = transaction.transaction_type as string;
+                          const bgClass =
+                            type === 'take_out'
+                              ? 'bg-[linear-gradient(to_right,rgba(255,255,255,1)_65%,rgba(239,68,68,0.05)_100%)]' // red-500 @5%
+                              : type === 'return'
+                                ? 'bg-[linear-gradient(to_right,rgba(255,255,255,1)_65%,rgba(34,197,94,0.05)_100%)]' // green-500 @5%
+                                : type === 'burn'
+                                  ? 'bg-[linear-gradient(to_right,rgba(255,255,255,1)_65%,rgba(245,158,11,0.05)_100%)]' // amber-500 @5%
+                                  : type === 'restock'
+                                    ? 'bg-[linear-gradient(to_right,rgba(255,255,255,1)_65%,rgba(59,130,246,0.05)_100%)]' // blue-500 @5%
+                                    : '';
+                          return (
+                          <TableRow key={transaction.id} className={bgClass}>
                             <TableCell>
                               <Checkbox
                                 checked={selectedTransactionIds.has(transaction.id)}
@@ -464,7 +499,7 @@ export default function TransactionHistoryView() {
                             </TableCell>
                             <TableCell>{transaction.employees?.initials || '-'}</TableCell>
                           </TableRow>
-                        ))
+                        )})
                       )}
                     </TableBody>
                   </Table>

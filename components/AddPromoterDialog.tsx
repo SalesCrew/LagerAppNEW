@@ -136,7 +136,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               <Button
                 type="button"
                 onClick={() => fileInputRef.current.click()}
-                className="w-full"
+                className="w-full h-9 rounded-md border text-black bg-black/10 hover:bg-black/15 border-black focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
               >
                 <Upload className="mr-2 h-4 w-4" /> Bild hochladen
               </Button>
@@ -153,7 +153,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
               />
             </div>
           )}
-          <div className="flex justify-end gap-2">
+          <div className="flex items-center justify-between gap-2">
             <Button
               type="button"
               variant="outline"
@@ -161,7 +161,7 @@ export default function AddPromoterDialog({ showDialog, setShowDialog, onSuccess
             >
               Abbrechen
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="h-9 rounded-md border text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-700 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none">
               {isSubmitting ? 'Wird hinzugefügt...' : 'Hinzufügen'}
             </Button>
           </div>

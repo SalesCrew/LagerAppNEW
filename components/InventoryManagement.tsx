@@ -156,6 +156,7 @@ export default function InventoryManagement() {
             setItems={setItems}
             refreshKey={refreshKey}
             promoters={fetchedPromotersList}
+            refreshPromoters={refreshPromoters}
             transactionHistory={{}}
             setTransactionHistory={() => {}}
           />

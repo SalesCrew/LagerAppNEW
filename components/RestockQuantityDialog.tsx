@@ -199,7 +199,7 @@ export default function RestockQuantityDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>Abbrechen</Button>
+          <Button variant="outline" className="h-9" onClick={onCancel}>Abbrechen</Button>
           <Button 
             onClick={() => {
               console.log('RestockQuantityDialog - Confirm button clicked');
@@ -209,6 +209,7 @@ export default function RestockQuantityDialog({
               const q = Number.parseInt(quantity || '');
               return isSubmitting || Number.isNaN(q) || q <= 0 || !selectedSizeId;
             })()}
+            className="h-9 rounded-md border text-green-600 bg-green-500/10 hover:bg-green-500/15 border-green-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)] focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
           >
             {isSubmitting ? 'Wird gespeichert...' : 'Bestätigen'}
           </Button>

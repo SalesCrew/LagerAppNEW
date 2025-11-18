@@ -57,7 +57,7 @@ export default function BrandView({
     <>
       {selectedBrand ? (
         <>
-          <div className="flex items-center justify-between mb-0">
+          <div className="flex items-center justify-between mb-0 px-4">
             <Button
               variant="ghost"
               size="sm"

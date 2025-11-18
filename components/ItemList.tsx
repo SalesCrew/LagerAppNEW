@@ -24,6 +24,7 @@ import { recordTakeOut, recordReturn, recordBurn } from '@/lib/api/transactions'
 import PromoterSelector from './PromoterSelector'
 import { supabase } from '@/lib/supabase'
 import DeleteConfirmDialog from './DeleteConfirmDialog'
+import { Skeleton } from './ui/skeleton'
 
 interface ItemListProps {
   brandId: string;
@@ -479,9 +480,38 @@ export default function ItemList({
 
   if (loading || loadingSizes) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading items...</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 px-4 pb-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card key={`skeleton-item-${i}`} className="overflow-hidden transition-all duration-300 shadow-sm rounded-2xl border border-neutral-200">
+            <div className="h-40">
+              <Skeleton className="w-full h-full" />
+            </div>
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+                <div className="flex items-center space-x-1 flex-shrink-0">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+              </div>
+              <div className="mt-4 rounded-md border border-dotted border-neutral-300/60 p-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Skeleton className="h-8 w-full rounded-md" />
+                <Skeleton className="h-8 w-full rounded-md" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
@@ -498,7 +528,7 @@ export default function ItemList({
   return (
     <>
       <div
-        className={`overflow-hidden transition-all duration-300 ${isMassEditMode ? 'max-h-40 opacity-100 mt-2 mb-2' : 'max-h-0 opacity-0 mt-0 mb-3'}`}
+        className={`overflow-hidden transition-all duration-300 px-4 ${isMassEditMode ? 'max-h-40 opacity-100 mt-2 mb-2' : 'max-h-0 opacity-0 mt-0 mb-3'}`}
       >
         {/* Wrapper aligns the divider and controls width to the buttons only */}
         <div className="ml-auto w-fit">
@@ -545,6 +575,7 @@ export default function ItemList({
               }}
               placeholder="Promoter wählen"
               includeInactive={selectedAction === 'return'}
+              colorVariant="violet"
             />
           </div>
           <Button

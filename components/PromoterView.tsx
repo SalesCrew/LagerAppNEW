@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
-import { Plus, Loader2, Undo2 } from 'lucide-react'
+import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "./ui/skeleton"
+import { Plus, Loader2, Undo2, CornerDownLeft } from 'lucide-react'
 import PromoterList from './PromoterList'
 import PromoterItemList from './PromoterItemList'
 import AddPromoterDialog from './AddPromoterDialog'
-import { usePromoters, PromoterWithDetails } from '@/hooks/usePromoters'
+import { PromoterWithDetails } from '@/hooks/usePromoters'
 import { useRouter } from 'next/navigation'
 import EditPromoterDialog from './EditPromoterDialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -38,6 +40,7 @@ interface PromoterViewProps {
   setTransactionHistory: (history: Record<string, any[]>) => void;
   refreshKey: number;
   promoters: PromoterWithDetails[];
+  refreshPromoters: () => void;
 }
 
 interface SimplePromoter {
@@ -63,7 +66,8 @@ export default function PromoterView({
   transactionHistory,
   setTransactionHistory,
   refreshKey,
-  promoters
+  promoters,
+  refreshPromoters
 }: PromoterViewProps) {
   const [showAddPromoterDialog, setShowAddPromoterDialog] = useState(false)
   const [editingPromoter, setEditingPromoter] = useState<PromoterWithDetails | null>(null)
@@ -75,9 +79,9 @@ export default function PromoterView({
   
   const [showReturnAllConfirmDialog, setShowReturnAllConfirmDialog] = useState(false);
   const [isReturningAllItems, setIsReturningAllItems] = useState(false);
+  const [isSingleReturnMode, setIsSingleReturnMode] = useState(false);
+  const [selectedReturnIds, setSelectedReturnIds] = useState<string[]>([]);
 
-  const { refreshPromoters } = usePromoters();
-  
   const loadAndSetPromoterInventory = useCallback(async () => {
     if (selectedPromoter?.id) {
       console.log(`[PromoterView] Loading inventory for ${selectedPromoter.id} due to change or refreshKey.`);
@@ -105,6 +109,79 @@ export default function PromoterView({
     setSelectedItem(null);
     // Update URL to remove query parameters
     router.push('/inventory');
+  };
+
+  // Toggle selection for single-return mode
+  const toggleSelectReturnItem = (id: string) => {
+    setSelectedReturnIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  // Confirm selected returns
+  const handleConfirmSelectedReturns = async () => {
+    if (!selectedPromoter || !currentUser?.id) {
+      toast({
+        title: "Fehler",
+        description: "Promoter oder Mitarbeiter nicht identifiziert. Aktion abgebrochen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedReturnIds.length === 0) {
+      toast({ title: "Keine Auswahl", description: "Bitte wählen Sie zuerst Artikel aus." });
+      return;
+    }
+
+    // Build list of selected inventory entries
+    const selectedInv = promoterInventory.filter(inv => selectedReturnIds.includes(`${inv.item.id}-${inv.size.id}`));
+    if (selectedInv.length === 0) {
+      toast({ title: "Nichts ausgewählt", description: "Keine passenden Artikel gefunden.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const promises = selectedInv.map(inv => recordReturn({
+        itemId: inv.item.id,
+        itemSizeId: inv.size.id,
+        quantity: inv.quantity,
+        promoterId: selectedPromoter.id,
+        employeeId: currentUser.id,
+        notes: `Einzelne Rückgabe via Auswahl für ${selectedPromoter.name}`
+      }));
+
+      const results = await Promise.allSettled(promises);
+      const failed = results.filter(r => r.status === 'rejected');
+      if (failed.length > 0) {
+        toast({
+          title: failed.length === results.length ? "Fehler" : "Teilweise erfolgreich",
+          description: `${results.length - failed.length} von ${results.length} Rückgaben erfolgreich.`,
+          variant: failed.length === results.length ? "destructive" : "default"
+        });
+      } else {
+        toast({ title: "Erfolg", description: `${results.length} Artikel zurückgegeben.` });
+      }
+
+      setSelectedReturnIds([]);
+      setIsSingleReturnMode(false);
+      await loadAndSetPromoterInventory();
+    } catch (error) {
+      console.error("Fehler bei ausgewählten Rückgaben:", error);
+      toast({ title: "Schwerwiegender Fehler", description: "Rückgabe fehlgeschlagen.", variant: "destructive" });
+    }
+  };
+
+  const handleSingleReturnButton = () => {
+    if (!isSingleReturnMode) {
+      setSelectedReturnIds([]);
+      setIsSingleReturnMode(true);
+      return;
+    }
+    // Confirm phase
+    if (selectedReturnIds.length === 0) {
+      toast({ title: "Keine Auswahl", description: "Bitte wählen Sie Artikel aus.", variant: "default" });
+      return;
+    }
+    void handleConfirmSelectedReturns();
   };
 
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
@@ -242,16 +319,27 @@ export default function PromoterView({
       {selectedPromoter ? (
         <>
           <div className="flex justify-between items-center mb-4">
-            <Button onClick={handleBackToPromoters}>Zurück zu Promotern</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="inline-flex h-9 items-center gap-1 rounded-md px-3 border bg-white text-black border-neutral-300 hover:bg-neutral-50 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              onClick={handleBackToPromoters}
+            >
+              Zurück zu Promotern
+            </Button>
             <h2 className="text-xl font-semibold">{selectedPromoter.name}</h2>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleShowHistory} disabled={isReturningAllItems}>
+              <Button variant="outline" className="h-9" onClick={handleShowHistory} disabled={isReturningAllItems}>
                 Verlauf anzeigen
               </Button>
               <AlertDialog open={showReturnAllConfirmDialog} onOpenChange={setShowReturnAllConfirmDialog}>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" disabled={isReturningAllItems || inventoryLoading || promoterInventory.length === 0}>
-                    <Undo2 className="mr-2 h-4 w-4" />
+                  <Button
+                    variant="ghost"
+                    disabled={isReturningAllItems || inventoryLoading || promoterInventory.length === 0}
+                    className="h-9 rounded-md border text-red-600 bg-red-500/10 hover:bg-red-500/15 border-red-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)] focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                  >
+                    <Undo2 className="mr-1 h-4 w-4" />
                     {isReturningAllItems ? "Wird verarbeitet..." : "Alle zurückgeben"}
                   </Button>
                 </AlertDialogTrigger>
@@ -264,45 +352,59 @@ export default function PromoterView({
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmReturnAll} disabled={isReturningAllItems}>
+                    <AlertDialogCancel className="h-9">Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleConfirmReturnAll}
+                      disabled={isReturningAllItems}
+                      className="h-9 rounded-md border text-green-600 bg-green-500/10 hover:bg-green-500/15 border-green-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)] focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                    >
                       {isReturningAllItems ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       Bestätigen
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              <Button
+                variant="ghost"
+                onClick={handleSingleReturnButton}
+                disabled={inventoryLoading}
+                className={`h-9 rounded-md border shadow-[0_8px_24px_rgba(0,0,0,0.06)] focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none
+                ${isSingleReturnMode ? 'text-green-700 bg-green-500/15 hover:bg-green-500/20 border-green-600' : 'text-green-600 bg-green-500/10 hover:bg-green-500/15 border-green-500'}`}
+              >
+                <CornerDownLeft className="mr-1 h-4 w-4" />
+                {isSingleReturnMode ? 'Bestätigen' : 'Einzelne Rückgabe'}
+              </Button>
             </div>
           </div>
 
-          {/* Display promoter details */}
-          <div className="border rounded-lg p-4 mb-4 bg-card">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {selectedPromoter.address && (
-                <div>
-                  <h3 className="font-medium text-sm">Adresse:</h3>
-                  <p className="text-sm text-muted-foreground">{selectedPromoter.address}</p>
-                </div>
-              )}
-              {selectedPromoter.clothing_size && (
-                <div>
-                  <h3 className="font-medium text-sm">Kleidungsgröße:</h3>
-                  <p className="text-sm text-muted-foreground">{selectedPromoter.clothing_size}</p>
-                </div>
-              )}
-              {selectedPromoter.phone_number && (
-                <div>
-                  <h3 className="font-medium text-sm">Telefonnummer:</h3>
-                  <p className="text-sm text-muted-foreground">{selectedPromoter.phone_number}</p>
-                </div>
-              )}
-            </div>
-            {selectedPromoter.notes && (
-              <div className="mt-4">
-                <h3 className="font-medium text-sm">Notizen:</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-line">{selectedPromoter.notes}</p>
+          {/* Display promoter details - compact single-row info (always visible with null states) */}
+          <div className="border rounded-md px-3 py-2 mb-4 bg-card">
+            <div className="flex items-center gap-8 text-sm">
+              <div className="flex-1 min-w-0 whitespace-nowrap">
+                <span className="text-neutral-500">Adresse: </span>
+                <span className="text-neutral-900 inline-block max-w-full truncate align-bottom">
+                  {selectedPromoter.address || '—'}
+                </span>
               </div>
-            )}
+              <div className="flex-1 min-w-0 whitespace-nowrap">
+                <span className="text-neutral-500">Kleidungsgröße: </span>
+                <span className="text-neutral-900 inline-block max-w-full truncate align-bottom">
+                  {selectedPromoter.clothing_size || '—'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0 whitespace-nowrap">
+                <span className="text-neutral-500">Telefonnummer: </span>
+                <span className="text-neutral-900 inline-block max-w-full truncate align-bottom">
+                  {selectedPromoter.phone_number || '—'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0 whitespace-nowrap">
+                <span className="text-neutral-500">Notizen: </span>
+                <span className="text-neutral-900 inline-block max-w-full truncate align-bottom">
+                  {selectedPromoter.notes || '—'}
+                </span>
+              </div>
+            </div>
           </div>
 
           <Tabs value="inventory" defaultValue="inventory" className="mb-4">
@@ -312,8 +414,23 @@ export default function PromoterView({
             
             <TabsContent value="inventory">
               {inventoryLoading ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Card key={`inventory-skeleton-${i}`} className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+                      <div className="h-48">
+                        <Skeleton className="w-full h-full" />
+                      </div>
+                      <CardContent className="p-4">
+                        <Skeleton className="h-5 w-3/4 mb-3" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-1/2" />
+                          <Skeleton className="h-4 w-1/3" />
+                          <Skeleton className="h-4 w-1/4" />
+                          <Skeleton className="h-4 w-2/5" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               ) : promoterInventory.length > 0 ? (
                 <PromoterItemList
@@ -336,6 +453,9 @@ export default function PromoterView({
                   setPromoters={() => refreshPromoters()}
                   transactionHistory={transactionHistory}
                   setTransactionHistory={setTransactionHistory}
+                  selectionMode={isSingleReturnMode}
+                  selectedIds={selectedReturnIds}
+                  toggleSelect={toggleSelectReturnItem}
                 />
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
@@ -356,8 +476,13 @@ export default function PromoterView({
         <>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Promoter</h2>
-            <Button onClick={() => setShowAddPromoterDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Neuer Promoter
+            <Button
+              variant="ghost"
+              size="sm"
+              className="inline-flex h-9 items-center gap-1 rounded-md px-3 border bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-700 hover:from-emerald-100 hover:to-emerald-200 dark:from-emerald-900/20 dark:to-emerald-900/30 dark:text-emerald-300 border-emerald-600/60 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+              onClick={() => setShowAddPromoterDialog(true)}
+            >
+              <Plus className="h-4 w-4" /> Neuer Promoter
             </Button>
           </div>
           <PromoterList

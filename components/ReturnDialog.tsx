@@ -335,13 +335,14 @@ export default function ReturnDialog({
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReturningItem(null)} disabled={isSubmitting || isCheckingInventory}>Abbrechen</Button>
+            <Button variant="outline" className="h-9" onClick={() => setReturningItem(null)} disabled={isSubmitting || isCheckingInventory}>Abbrechen</Button>
             <Button 
               onClick={handleConfirmReturn}
               disabled={(() => {
                 const q = Number.parseInt(quantity || '');
                 return isSubmitting || isCheckingInventory || !sizeId || !promoterId || Number.isNaN(q) || q <= 0 || (selectedSize ? q > inCirculationQuantity : false);
               })()}
+              className="h-9 rounded-md border text-green-600 bg-green-500/10 hover:bg-green-500/15 border-green-500 shadow-[0_8px_24px_rgba(0,0,0,0.06)] focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
             >
               {(isSubmitting || isCheckingInventory) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isSubmitting ? 'Wird gespeichert...' : isCheckingInventory ? 'Prüfe Inventar...' : 'Bestätigen'}
