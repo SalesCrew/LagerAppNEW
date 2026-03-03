@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Upload, Search, Loader2 } from 'lucide-react'
+import { Upload, Search, Loader2, Ban } from 'lucide-react'
 import Image from "next/image"
 import ConfirmSharedItemDialog from './ConfirmSharedItemDialog'
 import { useItems } from '@/hooks/useItems'
 import { useToast } from '@/hooks/use-toast'
-import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '@/lib/supabase'
 import { Item } from '@/lib/api/items'
 
@@ -51,6 +50,28 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
 
+  // Generate a unique numeric product ID (9 digits) by checking Supabase for duplicates
+  const generateUniqueProductId = async (): Promise<string> => {
+    const attempt = async (): Promise<string> => {
+      const candidate = String(Math.floor(100000000 + Math.random() * 900000000)); // 9-digit
+      const { data, error } = await supabase
+        .from('items')
+        .select('id')
+        .eq('product_id', candidate)
+        .limit(1);
+      if (!error && (!data || data.length === 0)) {
+        return candidate;
+      }
+      return '';
+    };
+    for (let i = 0; i < 25; i++) {
+      const id = await attempt();
+      if (id) return id;
+    }
+    // Fallback: timestamp-based with random suffix to keep it numeric
+    return `${Date.now()}${Math.floor(Math.random() * 10)}`;
+  };
+
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (showDialog) {
@@ -65,6 +86,11 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
       setSharedItemResults([])
       setSelectedSharedItem(null)
       setImageFile(null)
+      // Prefill a unique product ID immediately
+      ;(async () => {
+        const uniqueId = await generateUniqueProductId();
+        setNewItem(prev => ({ ...prev, productId: uniqueId }));
+      })();
     }
   }, [showDialog])
 
@@ -164,10 +190,20 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
         return
       }
       
-      // Generate a random product ID if not provided
-      let productIdToUse = newItem.productId.trim();
+      // Ensure we have a unique numeric product ID
+      let productIdToUse = (newItem.productId || '').trim();
       if (!productIdToUse) {
-        productIdToUse = uuidv4();
+        productIdToUse = await generateUniqueProductId();
+      } else {
+        // Double-check uniqueness just before saving
+        const { data: existing } = await supabase
+          .from('items')
+          .select('id')
+          .eq('product_id', productIdToUse)
+          .limit(1);
+        if (existing && existing.length > 0) {
+          productIdToUse = await generateUniqueProductId();
+        }
       }
 
       // Validate quantity
@@ -398,12 +434,18 @@ export default function AddItemDialog({ showDialog, setShowDialog, brandId }: Ad
               </div>
               <div className="space-y-2">
                 <Label htmlFor="productId">Produkt-ID</Label>
-                <Input
-                  id="productId"
-                  value={newItem.productId}
-                  onChange={(e) => setNewItem({...newItem, productId: e.target.value})}
-                  className="w-full h-9 focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
-                />
+                <div className="relative">
+                  <Input
+                    id="productId"
+                    value={newItem.productId}
+                    readOnly
+                    aria-readonly="true"
+                    tabIndex={-1}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="w-full h-9 pr-8 cursor-not-allowed select-none focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none"
+                  />
+                  <Ban className="h-4 w-4 absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500" />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="quantity">{multipleSizes ? 'Größen und Mengen' : 'Menge'}</Label>
