@@ -27,9 +27,10 @@ interface EditItemDialogProps {
   item: any
   setEditingItem: (item: any) => void
   brandId: string
+  onSave?: () => void
 }
 
-export default function EditItemDialog({ item, setEditingItem, brandId }: EditItemDialogProps) {
+export default function EditItemDialog({ item, setEditingItem, brandId, onSave }: EditItemDialogProps) {
   const { updateItemDetails, refreshItems } = useItems(brandId);
   const { toast } = useToast();
 
@@ -141,6 +142,15 @@ export default function EditItemDialog({ item, setEditingItem, brandId }: EditIt
         const qty = typeof s.quantity === 'number' ? s.quantity : (parseInt(s.quantity as any) || 0)
 
         if (s.id) {
+          const circ = s.inCirculation || 0
+          if (qty < circ) {
+            toast({
+              title: "Error",
+              description: `Größe "${s.size}": Menge (${qty}) darf nicht kleiner als im Umlauf (${circ}) sein.`,
+              variant: "destructive",
+            })
+            return
+          }
           const diff = qty - (s.originalDbQuantity || 0)
           const newAvailable = Math.max(0, (s.availableQuantity || 0) + diff)
           await updateItemSize(s.id, {
@@ -166,7 +176,15 @@ export default function EditItemDialog({ item, setEditingItem, brandId }: EditIt
         .update({ original_quantity: totalQuantity })
         .eq('id', item.id)
 
-      await refreshItems()
+      if (updateError) {
+        throw new Error(updateError.message)
+      }
+
+      if (onSave) {
+        await onSave()
+      } else {
+        await refreshItems()
+      }
       setEditingItem(null)
 
       toast({ title: "Erfolg", description: "Artikel wurde erfolgreich aktualisiert." })
@@ -209,7 +227,7 @@ export default function EditItemDialog({ item, setEditingItem, brandId }: EditIt
                         const q = typeof s.quantity === 'number' ? s.quantity : (parseInt(s.quantity as any) || 0)
                         return sum + q
                       }, 0)
-                      setSizes([{ size: 'Einheitsgröße', quantity: totalQty || '' }])
+                      setSizes([{ size: 'Einheitsgröße', quantity: totalQty }])
                     }
                   }}
                 />
@@ -256,7 +274,7 @@ export default function EditItemDialog({ item, setEditingItem, brandId }: EditIt
                           <Input
                             type="number"
                             placeholder="Menge"
-                            value={size.quantity === 0 ? "" : (size.quantity as any)}
+                            value={size.quantity === "" ? "" : size.quantity}
                             onChange={(e) => {
                               const newSizes = [...sizes]
                               const value = e.target.value
@@ -266,30 +284,24 @@ export default function EditItemDialog({ item, setEditingItem, brandId }: EditIt
                             onWheel={(e) => e.currentTarget.blur()}
                             className="w-1/2 h-8 text-sm focus-visible:ring-0 focus:ring-0 focus-visible:ring-offset-0 outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
                           />
-                          {sizes.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 flex-shrink-0"
-                              onClick={() => {
-                                const newSizes = sizes.filter((_, i) => i !== index)
-                                setSizes(newSizes)
-                              }}
-                            >
-                              <X size={14} />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 flex-shrink-0"
+                            onClick={() => {
+                              const newSizes = sizes.filter((_, i) => i !== index)
+                              setSizes(newSizes)
+                            }}
+                          >
+                            <X size={14} />
+                          </Button>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <Input
                       type="number"
-                      value={
-                        typeof sizes[0]?.quantity === 'number'
-                          ? (sizes[0].quantity === 0 ? "" : sizes[0].quantity)
-                          : (sizes[0]?.quantity as any)
-                      }
+                      value={sizes[0]?.quantity === "" ? "" : (sizes[0]?.quantity ?? "")}
                       onChange={(e) => {
                         const value = e.target.value
                         setSizes([{

@@ -808,6 +808,7 @@ export default function ItemList({
           item={editingItem} 
           setEditingItem={setEditingItem} 
           brandId={brandId}
+          onSave={async () => { await refreshItems(); await loadSizes(); }}
         />
       )}
 
